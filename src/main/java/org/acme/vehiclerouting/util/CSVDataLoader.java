@@ -154,17 +154,6 @@ public class CSVDataLoader {
                     Location visitLocation = new Location(dropLat, dropLon);
                     LocalDateTime serviceWindowStart = LocalDateTime.of(orderDate, pickupTime);
                     LocalDateTime serviceWindowEnd = serviceWindowStart.plusHours(2); // 2-hour window
-
-                    // Parse delivery time or use default
-                    int deliveryTimeMinutes = 15; // default
-                    try {
-                        if (data[DELIVERY_TIME_COL] != null && !data[DELIVERY_TIME_COL].trim().isEmpty()) {
-                            deliveryTimeMinutes = Integer.parseInt(data[DELIVERY_TIME_COL].trim());
-                        }
-                    } catch (NumberFormatException e) {
-                        // Use default delivery time
-                    }
-
                     // Create visit
                     Visit visit = new Visit(
                             String.valueOf(visitIdSequence.incrementAndGet()),
@@ -172,8 +161,7 @@ public class CSVDataLoader {
                             visitLocation,
                             1, // Standard demand
                             serviceWindowStart,
-                            serviceWindowEnd,
-                            Duration.ofMinutes(deliveryTimeMinutes)
+                            serviceWindowEnd
                     );
 
                     visits.add(visit);

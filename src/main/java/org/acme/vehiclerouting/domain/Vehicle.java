@@ -17,6 +17,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
+
+@PlanningEntity
 @JsonIdentityInfo(scope = Vehicle.class, generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Vehicle implements LocationAware {
 
@@ -39,6 +41,13 @@ public class Vehicle implements LocationAware {
         this.style = style;
         this.homeLocation = homeLocation;
         this.departureTime = departureTime;
+        this.visits = new ArrayList<>();
+    }
+
+    public Vehicle(String id, String style, Location homeLocation) {
+        this.id = id;
+        this.style = style;
+        this.homeLocation = homeLocation;
         this.visits = new ArrayList<>();
     }
 
@@ -70,7 +79,8 @@ public class Vehicle implements LocationAware {
         return departureTime;
     }
 
-    @ValueRangeProvider(id = "visitRange")
+    @PlanningListVariable(valueRangeProviderRefs = "visitRange")
+    @ValueRangeProvider(id = "visitRange") 
     public List<Visit> getVisits() {
         return visits;
     }
@@ -114,6 +124,18 @@ public class Vehicle implements LocationAware {
         totalDrivingTime += previousLocation.getDrivingTimeTo(homeLocation);
 
         return totalDrivingTime;
+    }
+
+    public int getCapacity() {
+        if ("motorcycle".equals(style)) {
+            return 5;
+        } else if ("scooter".equals(style)) {
+            return 8;
+        } else if ("van".equals(style)) {
+            return 20;
+        } else {
+            throw new IllegalStateException("Unknown vehicle style: " + style);
+        }
     }
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

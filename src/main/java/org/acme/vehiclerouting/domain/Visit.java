@@ -48,14 +48,13 @@ public class Visit implements LocationAware {
     }
 
     public Visit(String id, String name, Location location, int demand,
-                 LocalDateTime minStartTime, LocalDateTime maxEndTime, Duration serviceDuration) {
+                 LocalDateTime minStartTime, LocalDateTime maxEndTime) {
         this.id = id;
         this.name = name;
         this.location = location;
         this.demand = demand;
         this.minStartTime = minStartTime;
         this.maxEndTime = maxEndTime;
-        this.serviceDuration = serviceDuration;
     }
 
     public String getId() {

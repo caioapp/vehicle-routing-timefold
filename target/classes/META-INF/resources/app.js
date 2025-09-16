@@ -439,6 +439,20 @@ function solve() {
             refreshSolvingButtons(false);
         },
         "text");
+
+    fetch('/solve', {method: 'POST'})
+        .then(response => {
+            console.log('Solve response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Solution received:', data);
+            // Update your UI here
+        })
+        .catch(error => {
+            console.error('Solve error:', error);
+        });
+
 }
 
 function refreshSolvingButtons(solving) {

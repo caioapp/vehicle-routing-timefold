@@ -141,8 +141,7 @@ class VehicleRoutingPlanResourceTest {
         Visit newVisit = new Visit(String.valueOf(solution.getVisits().size() + 1),
                 "visit%d".formatted(solution.getVisits().size() + 1), new Location(43.77800837529796, 11.223969038020176),
                 2, LocalDateTime.now().plusDays(1).withHour(8).withMinute(0),
-                LocalDateTime.now().plusDays(1).withHour(14).withMinute(0),
-                Duration.ofMinutes(10));
+                LocalDateTime.now().plusDays(1).withHour(14).withMinute(0));
         solution.getVisits().add(newVisit);
         return newVisit;
     }

@@ -245,9 +245,7 @@ class VehicleRoutingCSVIntegrationTest {
                                 visitLocation,
                                 1, // demand
                                 serviceWindowStart,
-                                serviceWindowStart.plusHours(2), // 2 hour service window
-                                Duration.ofMinutes(15) // 15 minute service duration
-                        ));
+                                serviceWindowStart.plusHours(2)                        ));
 
                         rowCount++;
                     }
@@ -349,8 +347,7 @@ class VehicleRoutingCSVIntegrationTest {
         visits.add(new Visit("valid-1", "Valid Visit 1", 
                 new Location(12.9716, 77.5946), 1, 
                 LocalDateTime.now().plusDays(1).withHour(10),
-                LocalDateTime.now().plusDays(1).withHour(12),
-                Duration.ofMinutes(15)));
+                LocalDateTime.now().plusDays(1).withHour(12)));
 
         vehicles.add(new Vehicle("test-vehicle", "motorcycle", depotLocation,
                 LocalDateTime.now().plusDays(1).withHour(8).withMinute(0).withSecond(0).withNano(0)));
