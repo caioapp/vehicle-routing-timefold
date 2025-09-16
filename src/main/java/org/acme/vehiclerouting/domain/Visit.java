@@ -65,6 +65,18 @@ public class Visit {
         this.serviceDuration = Duration.ofMinutes(30).getSeconds(); // default 30 minutes
     }
 
+    public Visit(String id, String name, Location location, int demand,
+                LocalDateTime minStartTime, LocalDateTime maxEndTime, Duration serviceDuration) {
+        this.id = id;
+        this.name = name;
+        this.location = location;
+        this.demand = demand;
+        this.minStartTime = minStartTime;
+        this.maxEndTime = maxEndTime;
+        // Convert Duration to seconds
+        this.serviceDuration = serviceDuration != null ? serviceDuration.getSeconds() : Duration.ofMinutes(30).getSeconds();
+    }
+
     // SAFE getters that don't do calculations
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }

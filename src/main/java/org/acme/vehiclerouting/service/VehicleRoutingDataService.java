@@ -5,92 +5,156 @@ import org.acme.vehiclerouting.domain.VehicleRoutePlan;
 import org.acme.vehiclerouting.domain.Vehicle;
 import org.acme.vehiclerouting.domain.Visit;
 import org.acme.vehiclerouting.domain.Location;
+import ai.timefold.solver.core.api.solver.SolverStatus;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import java.util.List;
 import java.util.ArrayList;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @ApplicationScoped
 public class VehicleRoutingDataService {
 
     /**
-     * Creates a safe test problem that won't cause JSON serialization errors
+     * Creates the Amazon delivery problem with SolverStatus enum
      */
-    public VehicleRoutePlan createSafeProblem() {
-        List<Vehicle> vehicles = createSafeVehicles();
-        List<Visit> visits = createSafeVisits();
+    public VehicleRoutePlan createAmazonDeliveryProblem() {
+        List<Vehicle> vehicles = createAmazonVehicleFleet();
+        List<Visit> visits = createAmazonDeliveryVisits();
 
         VehicleRoutePlan plan = new VehicleRoutePlan(visits, vehicles);
-        plan.setSolverStatus("NOT_SOLVING");
-        plan.setScoreExplanation("Initial solution");
+
+        // Set all the fields with proper types
+        plan.setName("amazon-delivery-india-problem");
+        plan.setSouthWestCorner(new Location(10.033064, 72.784115));
+        plan.setNorthEastCorner(new Location(30.929584, 88.395507));
+        plan.setStartDateTime("2025-09-17T06:00:00");
+        plan.setEndDateTime("2025-09-17T22:00:00");
+        plan.setSolverStatus(SolverStatus.NOT_SOLVING); // Use enum instead of string
+        plan.setScoreExplanation("Initial Amazon delivery problem");
+        plan.setTotalDrivingTimeSeconds(0);
+
+        System.out.println("Created Amazon delivery problem: " + plan.toString());
 
         return plan;
     }
 
-    private List<Vehicle> createSafeVehicles() {
+    /**
+     * Create the complete 10-vehicle Amazon fleet
+     */
+    private List<Vehicle> createAmazonVehicleFleet() {
         List<Vehicle> vehicles = new ArrayList<>();
 
-        LocalDateTime departureTime = LocalDateTime.now().plusHours(1);
+        LocalDateTime departureTime = LocalDateTime.of(2025, 9, 17, 8, 0);
 
-        Vehicle vehicle1 = new Vehicle("vehicle-1", "motorcycle", 
-            new Location(19.076, 72.8777));
-        vehicle1.setCapacity(8);
-        vehicle1.setDepartureTime(departureTime);
-        vehicle1.setTotalDemand(0); // Initialize to safe values
-        vehicle1.setTotalDrivingTimeSeconds(0);
-        vehicles.add(vehicle1);
+        // 4 Motorcycles (capacity 8 each)
+        vehicles.add(createVehicle("vehicle-1", "motorcycle", 
+            new Location(23.374878, 85.335739), 8, departureTime));
+        vehicles.add(createVehicle("vehicle-4", "motorcycle", 
+            new Location(17.451976, 78.385883), 8, departureTime));
+        vehicles.add(createVehicle("vehicle-7", "motorcycle", 
+            new Location(12.934365, 77.616155), 8, departureTime));
+        vehicles.add(createVehicle("vehicle-10", "motorcycle", 
+            new Location(19.176269, 72.836721), 8, departureTime));
 
-        Vehicle vehicle2 = new Vehicle("vehicle-2", "van", 
-            new Location(18.5204, 73.8567));
-        vehicle2.setCapacity(15);
-        vehicle2.setDepartureTime(departureTime);
-        vehicle2.setTotalDemand(0);
-        vehicle2.setTotalDrivingTimeSeconds(0);
-        vehicles.add(vehicle2);
+        // 3 Scooters (capacity 12 each)
+        vehicles.add(createVehicle("vehicle-2", "scooter", 
+            new Location(21.186438, 72.794115), 12, departureTime));
+        vehicles.add(createVehicle("vehicle-5", "scooter", 
+            new Location(11.003669, 76.976494), 12, departureTime));
+        vehicles.add(createVehicle("vehicle-8", "scooter", 
+            new Location(17.431477, 78.40035), 12, departureTime));
 
+        // 3 Vans (capacity 18 each)
+        vehicles.add(createVehicle("vehicle-3", "van", 
+            new Location(18.55144, 73.804855), 18, departureTime));
+        vehicles.add(createVehicle("vehicle-6", "van", 
+            new Location(12.316967, 76.603067), 18, departureTime));
+        vehicles.add(createVehicle("vehicle-9", "van", 
+            new Location(18.56245, 73.916619), 18, departureTime));
+
+        System.out.println("Created Amazon fleet with " + vehicles.size() + " vehicles");
         return vehicles;
     }
 
-    private List<Visit> createSafeVisits() {
+    private Vehicle createVehicle(String id, String style, Location location, 
+                                 int capacity, LocalDateTime departureTime) {
+        Vehicle vehicle = new Vehicle(id, style, location, capacity, departureTime);
+        vehicle.setTotalDemand(0);
+        vehicle.setTotalDrivingTimeSeconds(0);
+        return vehicle;
+    }
+
+    /**
+     * Create Amazon delivery visits
+     */
+    private List<Visit> createAmazonDeliveryVisits() {
         List<Visit> visits = new ArrayList<>();
 
-        LocalDateTime now = LocalDateTime.now();
+        // Sample Amazon deliveries across India
+        visits.add(createVisit("1", "ialx566343618 (Clothing)", 
+            new Location(22.765049, 75.912471),
+            "2025-09-17T11:45:00", "2025-09-17T13:45:00", 7200));
 
-        Visit visit1 = new Visit("1", "Mumbai Central Delivery", 
-            new Location(19.0896, 72.8656));
-        visit1.setDemand(1);
-        visit1.setMinStartTime(now.plusHours(2));
-        visit1.setMaxEndTime(now.plusHours(6));
-        visit1.setServiceDuration(3600); // 1 hour
-        // Don't set calculated fields - leave them null for now
-        visits.add(visit1);
+        visits.add(createVisit("2", "akqg208421122 (Electronics)", 
+            new Location(13.043041, 77.813237),
+            "2025-09-17T19:50:00", "2025-09-17T21:50:00", 9900));
 
-        Visit visit2 = new Visit("2", "Pune Station Delivery", 
-            new Location(18.5289, 73.8732));
-        visit2.setDemand(1);
-        visit2.setMinStartTime(now.plusHours(3));
-        visit2.setMaxEndTime(now.plusHours(7));
-        visit2.setServiceDuration(1800); // 30 minutes
-        // Don't set calculated fields - leave them null for now
-        visits.add(visit2);
+        visits.add(createVisit("3", "njpu434582536 (Sports)", 
+            new Location(12.924264, 77.6884),
+            "2025-09-17T08:45:00", "2025-09-17T10:45:00", 7800));
 
-        Visit visit3 = new Visit("3", "Nashik Delivery", 
-            new Location(19.9975, 73.7898));
-        visit3.setDemand(1);
-        visit3.setMinStartTime(now.plusHours(4));
-        visit3.setMaxEndTime(now.plusHours(8));
-        visit3.setServiceDuration(2700); // 45 minutes
-        visits.add(visit3);
+        visits.add(createVisit("4", "rjto796129700 (Cosmetics)", 
+            new Location(11.053669, 77.026494),
+            "2025-09-17T18:10:00", "2025-09-17T20:10:00", 6300));
 
-        Visit visit4 = new Visit("4", "Aurangabad Delivery", 
-            new Location(19.8762, 75.3433));
-        visit4.setDemand(1);
-        visit4.setMinStartTime(now.plusHours(2));
-        visit4.setMaxEndTime(now.plusHours(9));
-        visit4.setServiceDuration(3000); // 50 minutes
-        visits.add(visit4);
+        visits.add(createVisit("5", "zguw716275638 (Toys)", 
+            new Location(13.012793, 80.289982),
+            "2025-09-17T13:45:00", "2025-09-17T15:45:00", 9000));
 
+        visits.add(createVisit("6", "Amazon Prime Books", 
+            new Location(28.6139, 77.2090), // Delhi
+            "2025-09-17T10:00:00", "2025-09-17T12:00:00", 5400));
+
+        visits.add(createVisit("7", "Home Appliances", 
+            new Location(19.0760, 72.8777), // Mumbai
+            "2025-09-17T14:30:00", "2025-09-17T16:30:00", 8100));
+
+        visits.add(createVisit("8", "Fashion Delivery", 
+            new Location(22.5726, 88.3639), // Kolkata
+            "2025-09-17T09:15:00", "2025-09-17T11:15:00", 6600));
+
+        visits.add(createVisit("9", "Tech Gadgets", 
+            new Location(26.9124, 75.7873), // Jaipur
+            "2025-09-17T15:45:00", "2025-09-17T17:45:00", 7200));
+
+        visits.add(createVisit("10", "Baby Products", 
+            new Location(23.0225, 72.5714), // Ahmedabad
+            "2025-09-17T12:20:00", "2025-09-17T14:20:00", 5700));
+
+        System.out.println("Created " + visits.size() + " Amazon delivery visits");
         return visits;
+    }
+
+    private Visit createVisit(String id, String name, Location location,
+                            String minStartTime, String maxEndTime, long serviceDuration) {
+        Visit visit = new Visit(id, name, location);
+        visit.setDemand(1);
+        visit.setMinStartTime(parseDateTime(minStartTime));
+        visit.setMaxEndTime(parseDateTime(maxEndTime));
+        visit.setServiceDuration(serviceDuration);
+
+        // Set safe initial values
+        visit.setArrivalTime(null);
+        visit.setDepartureTime(null);
+        visit.setStartServiceTime(null);
+        visit.setDrivingTimeSecondsFromPreviousStandstill(0);
+
+        return visit;
+    }
+
+    private LocalDateTime parseDateTime(String dateTimeString) {
+        return LocalDateTime.parse(dateTimeString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     }
 }

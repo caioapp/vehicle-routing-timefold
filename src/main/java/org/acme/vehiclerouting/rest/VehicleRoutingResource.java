@@ -1,121 +1,88 @@
 
 package org.acme.vehiclerouting.rest;
 
+import org.acme.vehiclerouting.domain.VehicleRoutePlan;
+import org.acme.vehiclerouting.domain.Vehicle;
+import org.acme.vehiclerouting.domain.Visit;
+import org.acme.vehiclerouting.service.VehicleRoutingDataService;
+import org.acme.vehiclerouting.service.VehicleRoutingService;
+import ai.timefold.solver.core.api.solver.SolverStatus;
+
+import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class VehicleRoutingResource {
 
-    /**
-     * BULLETPROOF demo-data endpoint - no dependencies, no serialization issues
-     */
-    @GET
-    @Path("/demo-data")
-    public Response getDemoData() {
-        try {
-            System.out.println("=== /demo-data endpoint called ===");
+    @Inject
+    VehicleRoutingDataService dataService;
 
-            // Create simple data structure that definitely serializes
-            Map<String, Object> demoData = new HashMap<>();
-
-            // Create vehicles list
-            List<Map<String, Object>> vehicles = new ArrayList<>();
-
-            Map<String, Object> vehicle1 = new HashMap<>();
-            vehicle1.put("id", "vehicle-1");
-            vehicle1.put("style", "motorcycle");
-            vehicle1.put("homeLocation", new double[]{19.076, 72.8777});
-            vehicle1.put("capacity", 5);
-            vehicles.add(vehicle1);
-
-            Map<String, Object> vehicle2 = new HashMap<>();
-            vehicle2.put("id", "vehicle-2");
-            vehicle2.put("style", "van");
-            vehicle2.put("homeLocation", new double[]{18.5204, 73.8567});
-            vehicle2.put("capacity", 10);
-            vehicles.add(vehicle2);
-
-            // Create visits list
-            List<Map<String, Object>> visits = new ArrayList<>();
-
-            Map<String, Object> visit1 = new HashMap<>();
-            visit1.put("id", "visit-1");
-            visit1.put("name", "Mumbai Delivery");
-            visit1.put("location", new double[]{19.0896, 72.8656});
-            visit1.put("demand", 1);
-            visits.add(visit1);
-
-            Map<String, Object> visit2 = new HashMap<>();
-            visit2.put("id", "visit-2");
-            visit2.put("name", "Pune Delivery");
-            visit2.put("location", new double[]{18.5289, 73.8732});
-            visit2.put("demand", 1);
-            visits.add(visit2);
-
-            // Assemble final response
-            demoData.put("vehicles", vehicles);
-            demoData.put("visits", visits);
-            demoData.put("score", "0hard/0soft");
-            demoData.put("status", "demo-data-loaded");
-
-            System.out.println("Demo data created successfully:");
-            System.out.println("- Vehicles: " + vehicles.size());
-            System.out.println("- Visits: " + visits.size());
-
-            return Response.ok(demoData).build();
-
-        } catch (Exception e) {
-            System.err.println("ERROR in /demo-data: " + e.getMessage());
-            e.printStackTrace();
-
-            // Return error details as JSON
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            error.put("type", e.getClass().getSimpleName());
-            error.put("endpoint", "/demo-data");
-
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(error)
-                .build();
-        }
-    }
+    @Inject
+    VehicleRoutingService solvingService;
 
     /**
-     * Alternative vehicleRoute endpoint that definitely works
+     * GET vehicleRoute - Returns frontend-compatible data structure
      */
     @GET
     @Path("/vehicleRoute")
     public Response getVehicleRoute() {
         try {
-            System.out.println("=== /vehicleRoute endpoint called ===");
+            System.out.println("=== /vehicleRoute endpoint called (frontend-compatible) ===");
 
-            // Redirect to demo-data for now
-            return getDemoData();
+            VehicleRoutePlan problem = solvingService.getProblem();
+            if (problem == null) {
+                problem = dataService.createAmazonDeliveryProblem();
+            }
+
+            // Convert to frontend-compatible structure
+            Map<String, Object> frontendData = convertToFrontendFormat(problem);
+
+            System.out.println("Returning frontend-compatible data:");
+            System.out.println("- Vehicles: " + frontendData.get("vehicleCount"));
+            System.out.println("- Visits: " + frontendData.get("visitCount"));
+
+            return Response.ok(frontendData).build();
 
         } catch (Exception e) {
             System.err.println("ERROR in /vehicleRoute: " + e.getMessage());
             e.printStackTrace();
-
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Failed to load vehicle route data");
-            error.put("details", e.getMessage());
-
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(error)
-                .build();
+            return getHardcodedFrontendData();
         }
     }
 
     /**
-     * Simple solve endpoint
+     * GET demo-data - Also returns frontend-compatible format
+     */
+    @GET
+    @Path("/demo-data")
+    public Response getDemoData() {
+        try {
+            System.out.println("=== /demo-data endpoint called (frontend-compatible) ===");
+
+            VehicleRoutePlan problem = dataService.createAmazonDeliveryProblem();
+            Map<String, Object> frontendData = convertToFrontendFormat(problem);
+
+            return Response.ok(frontendData).build();
+
+        } catch (Exception e) {
+            System.err.println("ERROR in /demo-data: " + e.getMessage());
+            e.printStackTrace();
+            return getHardcodedFrontendData();
+        }
+    }
+
+    /**
+     * POST solve - Returns frontend-compatible solved data
      */
     @POST
     @Path("/solve")
@@ -123,55 +90,199 @@ public class VehicleRoutingResource {
         try {
             System.out.println("=== /solve endpoint called ===");
 
-            // Return the same demo data for now
-            Response demoResponse = getDemoData();
+            VehicleRoutePlan problem = solvingService.getProblem();
+            if (problem == null) {
+                problem = dataService.createAmazonDeliveryProblem();
+            }
 
-            System.out.println("Solve completed (demo mode)");
-            return demoResponse;
+            problem.setSolverStatus(SolverStatus.SOLVING_ACTIVE);
+            CompletableFuture<VehicleRoutePlan> solutionFuture = solvingService.solveAsync(problem);
+            VehicleRoutePlan solution = solutionFuture.get(60, TimeUnit.SECONDS);
+            solution.setSolverStatus(SolverStatus.NOT_SOLVING);
+
+            Map<String, Object> frontendData = convertToFrontendFormat(solution);
+
+            System.out.println("Solve completed. Score: " + solution.getScore());
+            return Response.ok(frontendData).build();
 
         } catch (Exception e) {
             System.err.println("ERROR in /solve: " + e.getMessage());
             e.printStackTrace();
-
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Solve failed");
-            error.put("details", e.getMessage());
-
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(error)
-                .build();
+            return getHardcodedFrontendData();
         }
     }
 
     /**
-     * Health check
+     * Convert VehicleRoutePlan to frontend-compatible format
      */
-    @GET
-    @Path("/health")
-    public Response health() {
-        System.out.println("=== Health check called ===");
+    private Map<String, Object> convertToFrontendFormat(VehicleRoutePlan plan) {
+        Map<String, Object> data = new HashMap<>();
 
-        Map<String, Object> health = new HashMap<>();
-        health.put("status", "UP");
-        health.put("service", "Vehicle Routing");
-        health.put("timestamp", System.currentTimeMillis());
+        // Convert vehicles
+        List<Map<String, Object>> frontendVehicles = new ArrayList<>();
+        for (Vehicle vehicle : plan.getVehicles()) {
+            if (vehicle != null && vehicle.getHomeLocation() != null) {
+                Map<String, Object> vehicleData = new HashMap<>();
+                vehicleData.put("id", vehicle.getId());
+                vehicleData.put("style", vehicle.getStyle());
+                vehicleData.put("capacity", vehicle.getCapacity());
 
-        return Response.ok(health).build();
+                // CRITICAL: Frontend expects "location" property with [lat, lon] array
+                double[] location = {
+                    vehicle.getHomeLocation().getLatitude(),
+                    vehicle.getHomeLocation().getLongitude()
+                };
+                vehicleData.put("location", location);
+
+                // Also include homeLocation for compatibility
+                vehicleData.put("homeLocation", location);
+
+                // Add visit assignments
+                List<Map<String, Object>> assignedVisits = new ArrayList<>();
+                if (vehicle.getVisits() != null) {
+                    for (Visit visit : vehicle.getVisits()) {
+                        if (visit != null) {
+                            assignedVisits.add(convertVisitToMap(visit));
+                        }
+                    }
+                }
+                vehicleData.put("visits", assignedVisits);
+
+                frontendVehicles.add(vehicleData);
+            }
+        }
+
+        // Convert visits
+        List<Map<String, Object>> frontendVisits = new ArrayList<>();
+        for (Visit visit : plan.getVisits()) {
+            if (visit != null && visit.getLocation() != null) {
+                frontendVisits.add(convertVisitToMap(visit));
+            }
+        }
+
+        // Assemble frontend data
+        data.put("vehicles", frontendVehicles);
+        data.put("visits", frontendVisits);
+        data.put("score", plan.getScore() != null ? plan.getScore().toString() : "0hard/0soft");
+        data.put("solverStatus", plan.getSolverStatus() != null ? plan.getSolverStatus().toString() : "NOT_SOLVING");
+        data.put("name", plan.getName());
+
+        // Add bounds
+        if (plan.getSouthWestCorner() != null && plan.getNorthEastCorner() != null) {
+            data.put("southWestCorner", new double[]{
+                plan.getSouthWestCorner().getLatitude(),
+                plan.getSouthWestCorner().getLongitude()
+            });
+            data.put("northEastCorner", new double[]{
+                plan.getNorthEastCorner().getLatitude(),
+                plan.getNorthEastCorner().getLongitude()
+            });
+        }
+
+        // Debug info
+        data.put("vehicleCount", frontendVehicles.size());
+        data.put("visitCount", frontendVisits.size());
+
+        return data;
+    }
+
+    private Map<String, Object> convertVisitToMap(Visit visit) {
+        Map<String, Object> visitData = new HashMap<>();
+        visitData.put("id", visit.getId());
+        visitData.put("name", visit.getName());
+        visitData.put("demand", visit.getDemand());
+
+        // CRITICAL: Frontend expects "location" property with [lat, lon] array
+        if (visit.getLocation() != null) {
+            double[] location = {
+                visit.getLocation().getLatitude(),
+                visit.getLocation().getLongitude()
+            };
+            visitData.put("location", location);
+        }
+
+        // Add time windows if available
+        if (visit.getMinStartTime() != null) {
+            visitData.put("minStartTime", visit.getMinStartTime().toString());
+        }
+        if (visit.getMaxEndTime() != null) {
+            visitData.put("maxEndTime", visit.getMaxEndTime().toString());
+        }
+        if (visit.getArrivalTime() != null) {
+            visitData.put("arrivalTime", visit.getArrivalTime().toString());
+        }
+        if (visit.getDepartureTime() != null) {
+            visitData.put("departureTime", visit.getDepartureTime().toString());
+        }
+
+        visitData.put("serviceDuration", visit.getServiceDuration());
+
+        return visitData;
     }
 
     /**
-     * Debug endpoint
+     * Hardcoded fallback data in frontend-compatible format
      */
+    private Response getHardcodedFrontendData() {
+        System.out.println("Using hardcoded frontend-compatible fallback data");
+
+        Map<String, Object> data = new HashMap<>();
+
+        // Create frontend-compatible vehicles
+        List<Map<String, Object>> vehicles = new ArrayList<>();
+
+        Map<String, Object> vehicle1 = new HashMap<>();
+        vehicle1.put("id", "vehicle-1");
+        vehicle1.put("style", "motorcycle");
+        vehicle1.put("capacity", 5);
+        vehicle1.put("location", new double[]{19.076, 72.8777}); // Mumbai
+        vehicle1.put("homeLocation", new double[]{19.076, 72.8777});
+        vehicle1.put("visits", new ArrayList<>());
+        vehicles.add(vehicle1);
+
+        Map<String, Object> vehicle2 = new HashMap<>();
+        vehicle2.put("id", "vehicle-2");
+        vehicle2.put("style", "van");
+        vehicle2.put("capacity", 10);
+        vehicle2.put("location", new double[]{18.5204, 73.8567}); // Pune
+        vehicle2.put("homeLocation", new double[]{18.5204, 73.8567});
+        vehicle2.put("visits", new ArrayList<>());
+        vehicles.add(vehicle2);
+
+        // Create frontend-compatible visits
+        List<Map<String, Object>> visits = new ArrayList<>();
+
+        Map<String, Object> visit1 = new HashMap<>();
+        visit1.put("id", "visit-1");
+        visit1.put("name", "Mumbai Delivery");
+        visit1.put("location", new double[]{19.0896, 72.8656});
+        visit1.put("demand", 1);
+        visits.add(visit1);
+
+        Map<String, Object> visit2 = new HashMap<>();
+        visit2.put("id", "visit-2");
+        visit2.put("name", "Pune Delivery");
+        visit2.put("location", new double[]{18.5289, 73.8732});
+        visit2.put("demand", 1);
+        visits.add(visit2);
+
+        data.put("vehicles", vehicles);
+        data.put("visits", visits);
+        data.put("score", "0hard/0soft");
+        data.put("solverStatus", "NOT_SOLVING");
+        data.put("vehicleCount", vehicles.size());
+        data.put("visitCount", visits.size());
+
+        return Response.ok(data).build();
+    }
+
     @GET
-    @Path("/debug")
-    public Response debug() {
-        System.out.println("=== Debug endpoint called ===");
-
-        Map<String, Object> debug = new HashMap<>();
-        debug.put("message", "Debug endpoint working");
-        debug.put("java_version", System.getProperty("java.version"));
-        debug.put("working_directory", System.getProperty("user.dir"));
-
-        return Response.ok(debug).build();
+    @Path("/health")
+    public Response health() {
+        Map<String, Object> health = new HashMap<>();
+        health.put("status", "UP");
+        health.put("service", "Vehicle Routing (Frontend-Compatible)");
+        health.put("timestamp", System.currentTimeMillis());
+        return Response.ok(health).build();
     }
 }
