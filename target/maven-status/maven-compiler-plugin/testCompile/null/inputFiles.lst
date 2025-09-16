@@ -1,7 +1,9 @@
-C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\src\test\java\org\acme\vehiclerouting\domain\geo\HaversineDrivingTimeCalculatorTest.java
-C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\src\test\java\org\acme\vehiclerouting\domain\jackson\VRPScoreAnalysisJacksonDeserializer.java
-C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\src\test\java\org\acme\vehiclerouting\domain\jackson\VRPScoreAnalysisJacksonModule.java
-C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\src\test\java\org\acme\vehiclerouting\rest\VehicleRoutingEnvironmentTest.java
-C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\src\test\java\org\acme\vehiclerouting\rest\VehicleRoutingPlanResourceTest.java
-C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\src\test\java\org\acme\vehiclerouting\rest\VehicleRoutingResourceIT.java
-C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\src\test\java\org\acme\vehiclerouting\solver\VehicleRoutingConstraintProviderTest.java
+C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\vehicle-routing-timefold\src\test\java\org\acme\vehiclerouting\domain\geo\HaversineDrivingTimeCalculatorTest.java
+C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\vehicle-routing-timefold\src\test\java\org\acme\vehiclerouting\domain\jackson\VRPScoreAnalysisJacksonDeserializer.java
+C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\vehicle-routing-timefold\src\test\java\org\acme\vehiclerouting\domain\jackson\VRPScoreAnalysisJacksonModule.java
+C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\vehicle-routing-timefold\src\test\java\org\acme\vehiclerouting\rest\VehicleRoutingCSVIntegrationTest.java
+C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\vehicle-routing-timefold\src\test\java\org\acme\vehiclerouting\rest\VehicleRoutingEnvironmentTest.java
+C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\vehicle-routing-timefold\src\test\java\org\acme\vehiclerouting\rest\VehicleRoutingPlanResourceTest.java
+C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\vehicle-routing-timefold\src\test\java\org\acme\vehiclerouting\rest\VehicleRoutingResourceIT.java
+C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\vehicle-routing-timefold\src\test\java\org\acme\vehiclerouting\rest\VehicleRoutingUITest.java
+C:\Users\caioa\Desktop\Work\vehicle-routing2\timefold-quickstarts\java\vehicle-routing\vehicle-routing-timefold\src\test\java\org\acme\vehiclerouting\solver\VehicleRoutingConstraintProviderTest.java
