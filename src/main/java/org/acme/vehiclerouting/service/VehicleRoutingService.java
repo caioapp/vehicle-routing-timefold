@@ -23,24 +23,12 @@ public class VehicleRoutingService {
     private VehicleRoutePlan currentProblem;
     private SolverJob<VehicleRoutePlan, UUID> currentSolverJob;
 
-    /**
-     * Get problem data - FIXED to actually load data
-     */
     public VehicleRoutePlan getProblem() {
-        if (currentProblem == null) {
-            // Load test problem (smaller dataset for debugging)
-            currentProblem = dataService.createTestProblem();
-
-            // Uncomment this line to use full Amazon dataset instead:
-            // currentProblem = dataService.createAmazonDeliveryProblem();
-
-            System.out.println("Loaded problem with " + 
-                currentProblem.getVehicles().size() + " vehicles and " + 
-                currentProblem.getVisits().size() + " visits");
-        }
-        return currentProblem;
+    if (currentProblem == null) {
+        currentProblem = dataService.createSafeProblem();
     }
-
+    return currentProblem;
+}
     public CompletableFuture<VehicleRoutePlan> solveAsync(VehicleRoutePlan problem) {
         UUID problemId = UUID.randomUUID();
         stopSolving();
@@ -74,14 +62,14 @@ public class VehicleRoutingService {
         currentProblem = null;
     }
 
-    /**
-     * Switch to full Amazon dataset
-     */
-    public VehicleRoutePlan loadFullDataset() {
-        currentProblem = dataService.createAmazonDeliveryProblem();
-        System.out.println("Loaded FULL Amazon dataset with " + 
-            currentProblem.getVehicles().size() + " vehicles and " + 
-            currentProblem.getVisits().size() + " visits");
-        return currentProblem;
-    }
+    // /**
+    //  * Switch to full Amazon dataset
+    //  */
+    // public VehicleRoutePlan loadFullDataset() {
+    //     currentProblem = dataService.createAmazonDeliveryProblem();
+    //     System.out.println("Loaded FULL Amazon dataset with " + 
+    //         currentProblem.getVehicles().size() + " vehicles and " + 
+    //         currentProblem.getVisits().size() + " visits");
+    //     return currentProblem;
+    // }
 }

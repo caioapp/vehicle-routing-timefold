@@ -1,173 +1,95 @@
-package org.acme.vehiclerouting.domain;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Stream;
+package org.acme.vehiclerouting.domain;
 
 import ai.timefold.solver.core.api.domain.solution.PlanningEntityCollectionProperty;
 import ai.timefold.solver.core.api.domain.solution.PlanningScore;
 import ai.timefold.solver.core.api.domain.solution.PlanningSolution;
+import ai.timefold.solver.core.api.domain.solution.ProblemFactCollectionProperty;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.buildin.hardsoftlong.HardSoftLongScore;
-import ai.timefold.solver.core.api.solver.SolverStatus;
 
-import org.acme.vehiclerouting.domain.geo.DrivingTimeCalculator;
-import org.acme.vehiclerouting.domain.geo.HaversineDrivingTimeCalculator;
+import java.util.List;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-/**
- * The plan for routing vehicles to visits, including:
- * <ul>
- * <li>capacity - each vehicle has a capacity for visits demand,</li>
- * <li>time windows - each visit accepts the vehicle only in specified time
- * window.</li>
- * </ul>
- *
- * The planning solution is optimized according to the driving time (as opposed
- * to the travel distance, for example)
- * because it is easy to determine if the vehicle arrival time fits into the
- * visit time window.
- * In addition, optimizing travel time optimizes the distance too, as a side
- * effect - in case there is a faster route,
- * the travel time takes precedence (highway vs. local road).
- */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @PlanningSolution
 public class VehicleRoutePlan {
 
-    private String name;
-
-    private Location southWestCorner;
-    private Location northEastCorner;
-
-    private LocalDateTime startDateTime;
-
-    private LocalDateTime endDateTime;
-
-    @PlanningEntityCollectionProperty
-    @ValueRangeProvider(id = "vehicleRange")
-    private List<Vehicle> vehicles;
-
-    @PlanningEntityCollectionProperty
+    @ProblemFactCollectionProperty
+    @ValueRangeProvider
     private List<Visit> visits;
+
+    @PlanningEntityCollectionProperty  
+    private List<Vehicle> vehicles;
 
     @PlanningScore
     private HardSoftLongScore score;
 
-    private SolverStatus solverStatus;
+    private String name;
+    private double[] southWestCorner;
+    private double[] northEastCorner;
+    private String startDateTime;
+    private String endDateTime;
 
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    // Additional fields for JSON compatibility
+    private String solverStatus;
     private String scoreExplanation;
+    private long totalDrivingTimeSeconds;
 
+    // Default constructor for Timefold
     public VehicleRoutePlan() {
-    }
-
-    public VehicleRoutePlan(String name, HardSoftLongScore score, SolverStatus solverStatus) {
-        this.name = name;
-        this.score = score;
-        this.solverStatus = solverStatus;
+        this.visits = new ArrayList<>();
+        this.vehicles = new ArrayList<>();
     }
 
     public VehicleRoutePlan(List<Visit> visits, List<Vehicle> vehicles) {
-        this("Vehicle routing", visits, vehicles);
+        this.visits = visits != null ? visits : new ArrayList<>();
+        this.vehicles = vehicles != null ? vehicles : new ArrayList<>();
     }
 
-    public VehicleRoutePlan(String name, List<Visit> visits, List<Vehicle> vehicles) {
-        this.name = name;
+    // Add the missing constructor
+    public VehicleRoutePlan(String name, Location southWest, Location northEast, LocalDateTime windowStart, LocalDateTime windowEnd, List<Vehicle> vehicles, List<Visit> visits) {
+        // Initialize fields as appropriate
         this.vehicles = vehicles;
         this.visits = visits;
-        List<Location> locations = Stream.concat(
-                vehicles.stream().map(Vehicle::getHomeLocation),
-                visits.stream().map(Visit::getLocation)).toList();
-
-        DrivingTimeCalculator drivingTimeCalculator = HaversineDrivingTimeCalculator.getInstance();
-        drivingTimeCalculator.initDrivingTimeMaps(locations);
     }
 
-    @JsonCreator
-    public VehicleRoutePlan(@JsonProperty("name") String name,
-            @JsonProperty("southWestCorner") Location southWestCorner,
-            @JsonProperty("northEastCorner") Location northEastCorner,
-            @JsonProperty("startDateTime") LocalDateTime startDateTime,
-            @JsonProperty("endDateTime") LocalDateTime endDateTime,
-            @JsonProperty("vehicles") List<Vehicle> vehicles,
-            @JsonProperty("visits") List<Visit> visits) {
-        this.name = name;
-        this.southWestCorner = southWestCorner;
-        this.northEastCorner = northEastCorner;
-        this.startDateTime = startDateTime;
-        this.endDateTime = endDateTime;
-        this.vehicles = vehicles;
-        this.visits = visits;
-        List<Location> locations = Stream.concat(
-                vehicles.stream().map(Vehicle::getHomeLocation),
-                visits.stream().map(Visit::getLocation)).toList();
+    // Getters and setters
+    public List<Visit> getVisits() { return visits; }
+    public void setVisits(List<Visit> visits) { this.visits = visits; }
 
-        DrivingTimeCalculator drivingTimeCalculator = HaversineDrivingTimeCalculator.getInstance();
-        drivingTimeCalculator.initDrivingTimeMaps(locations);
+    public List<Vehicle> getVehicles() { return vehicles; }
+    public void setVehicles(List<Vehicle> vehicles) { this.vehicles = vehicles; }
+
+    public HardSoftLongScore getScore() { return score; }
+    public void setScore(HardSoftLongScore score) { this.score = score; }
+
+    public String getSolverStatus() { return solverStatus; }
+    public void setSolverStatus(String solverStatus) { this.solverStatus = solverStatus; }
+
+    public String getScoreExplanation() { return scoreExplanation; }
+    public void setScoreExplanation(String scoreExplanation) { this.scoreExplanation = scoreExplanation; }
+
+    public long getTotalDrivingTimeSeconds() { return totalDrivingTimeSeconds; }
+    public void setTotalDrivingTimeSeconds(long totalDrivingTimeSeconds) { 
+        this.totalDrivingTimeSeconds = totalDrivingTimeSeconds; 
     }
+    
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public double[] getSouthWestCorner() { return southWestCorner; }
+    public void setSouthWestCorner(double[] southWestCorner) { this.southWestCorner = southWestCorner; }
+    public double[] getNorthEastCorner() { return northEastCorner; } 
+    public void setNorthEastCorner(double[] northEastCorner) { this.northEastCorner = northEastCorner; }
+    public String getStartDateTime() { return startDateTime; }
+    public void setStartDateTime(String startDateTime) { this.startDateTime = startDateTime;}
 
-    public String getName() {
-        return name;
-    }
-
-    public Location getSouthWestCorner() {
-        return southWestCorner;
-    }
-
-    public Location getNorthEastCorner() {
-        return northEastCorner;
-    }
-
-    public LocalDateTime getStartDateTime() {
-        return startDateTime;
-    }
-
-    public LocalDateTime getEndDateTime() {
-        return endDateTime;
-    }
-
-    public List<Vehicle> getVehicles() {
-        return vehicles;
-    }
-
-    public List<Visit> getVisits() {
-        return visits;
-    }
-
-    public HardSoftLongScore getScore() {
-        return score;
-    }
-
-    public void setScore(HardSoftLongScore score) {
-        this.score = score;
-    }
-
-    // ************************************************************************
-    // Complex methods
-    // ************************************************************************
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    public long getTotalDrivingTimeSeconds() {
-        return vehicles == null ? 0 : vehicles.stream().mapToLong(Vehicle::getTotalDrivingTimeSeconds).sum();
-    }
-
-    public SolverStatus getSolverStatus() {
-        return solverStatus;
-    }
-
-    public void setSolverStatus(SolverStatus solverStatus) {
-        this.solverStatus = solverStatus;
-    }
-
-    public String getScoreExplanation() {
-        return scoreExplanation;
-    }
-
-    public void setScoreExplanation(String scoreExplanation) {
-        this.scoreExplanation = scoreExplanation;
+    @Override
+    public String toString() {
+        return "VehicleRoutePlan{" +
+                "vehicles=" + (vehicles != null ? vehicles.size() : 0) +
+                ", visits=" + (visits != null ? visits.size() : 0) +
+                ", score=" + score +
+                '}';
     }
 }

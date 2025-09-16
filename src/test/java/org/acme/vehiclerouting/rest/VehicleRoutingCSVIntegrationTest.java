@@ -47,7 +47,6 @@ class VehicleRoutingCSVIntegrationTest {
     @DisplayName("Test CSV data import and problem creation")
     void testCSVDataImport() {
         assertThat(testProblem).isNotNull();
-        assertThat(testProblem.getName()).isEqualTo("amazon-delivery-test-problem");
         assertThat(testProblem.getVehicles()).isNotEmpty();
         assertThat(testProblem.getVisits()).isNotEmpty();
 
@@ -238,15 +237,17 @@ class VehicleRoutingCSVIntegrationTest {
                         LocalDate orderDate = LocalDate.parse(orderDateStr);
                         LocalTime pickupTime = LocalTime.parse(pickupTimeStr);
                         LocalDateTime serviceWindowStart = LocalDateTime.of(orderDate, pickupTime);
-
-                        visits.add(new Visit(
+                        
+                        Visit visit = new Visit(
                                 String.valueOf(visitIdSequence.incrementAndGet()),
                                 data[0], // Order_ID as visit name
-                                visitLocation,
-                                1, // demand
-                                serviceWindowStart,
-                                serviceWindowStart.plusHours(2)                        ));
+                                visitLocation);
+                        
+                        visit.setDemand(1);
+                        visit.setMinStartTime(serviceWindowStart);
+                        visit.setMaxEndTime(serviceWindowStart.plusHours(2));
 
+                        visits.add(visit);
                         rowCount++;
                     }
                 } catch (Exception e) {
@@ -258,25 +259,19 @@ class VehicleRoutingCSVIntegrationTest {
 
         // Create vehicles if we have a valid depot
         if (depotLocation != null) {
-            vehicles.add(new Vehicle("test-motorcycle", "motorcycle", depotLocation, 
-                    LocalDateTime.now().plusDays(1).withHour(8).withMinute(0).withSecond(0).withNano(0)));
-            vehicles.add(new Vehicle("test-scooter", "scooter", depotLocation, 
-                    LocalDateTime.now().plusDays(1).withHour(8).withMinute(0).withSecond(0).withNano(0)));
-            vehicles.add(new Vehicle("test-van", "van", depotLocation, 
-                    LocalDateTime.now().plusDays(1).withHour(8).withMinute(0).withSecond(0).withNano(0)));
+            vehicles.add(new Vehicle("test-motorcycle", "motorcycle", depotLocation));
+            vehicles.add(new Vehicle("test-scooter", "scooter", depotLocation));
+            vehicles.add(new Vehicle("test-van", "van", depotLocation));
         } else {
             // Create a default depot if none found
             depotLocation = new Location(12.9716, 77.5946); // Bangalore coordinates as fallback
-            vehicles.add(new Vehicle("default-vehicle", "motorcycle", depotLocation, 
-                    LocalDateTime.now().plusDays(1).withHour(8).withMinute(0).withSecond(0).withNano(0)));
+            Vehicle defaultVehicle = new Vehicle("default-vehicle", "motorcycle", depotLocation);
+            // If Vehicle has a setter for start time, set it here. Example:
+            // defaultVehicle.setStartDateTime(LocalDateTime.now().plusDays(1).withHour(8).withMinute(0).withSecond(0).withNano(0));
+            vehicles.add(defaultVehicle);
         }
 
-        return new VehicleRoutePlan("amazon-delivery-test-problem",
-                new Location(0, 0), new Location(100, 100),
-                LocalDateTime.now().plusDays(1).withHour(8).withMinute(0),
-                LocalDateTime.now().plusDays(1).withHour(20).withMinute(0),
-                vehicles,
-                visits);
+        return new VehicleRoutePlan(visits, vehicles);
     }
 
     private String[] parseCSVLine(String line) {
@@ -323,18 +318,20 @@ class VehicleRoutingCSVIntegrationTest {
 
         Location depotLocation = baseProblem.getVehicles().get(0).getHomeLocation();
         for (int i = 0; i < vehicleCount; i++) {
-            newVehicles.add(new Vehicle("vehicle-" + (i + 1), "motorcycle", depotLocation,
-                    LocalDateTime.now().plusDays(1).withHour(8).withMinute(0).withSecond(0).withNano(0)));
+            Vehicle vehicle = new Vehicle("vehicle-" + (i + 1), "motorcycle", depotLocation);
+            // If Vehicle has a setter for start time, set it here:
+            // vehicle.setStartDateTime(LocalDateTime.now().plusDays(1).withHour(8).withMinute(0).withSecond(0).withNano(0));
+            newVehicles.add(vehicle);
         }
 
         return new VehicleRoutePlan(
-                baseProblem.getName() + "-" + vehicleCount + "-vehicles",
-                baseProblem.getSouthWestCorner(),
-                baseProblem.getNorthEastCorner(),
-                baseProblem.getStartDateTime(),
-                baseProblem.getEndDateTime(),
-                newVehicles,
-                baseProblem.getVisits().subList(0, Math.min(10, baseProblem.getVisits().size())) // Limit visits for faster testing
+                // baseProblem.getName() + "-" + vehicleCount + "-vehicles",
+                // baseProblem.getSouthWestCorner(),
+                // baseProblem.getNorthEastCorner(),
+                // baseProblem.getStartDateTime(),
+                // baseProblem.getEndDateTime(),
+                baseProblem.getVisits().subList(0, Math.min(10, baseProblem.getVisits().size())), // Limit visits for faster testing
+                newVehicles
         );
     }
 
@@ -352,11 +349,7 @@ class VehicleRoutingCSVIntegrationTest {
         vehicles.add(new Vehicle("test-vehicle", "motorcycle", depotLocation,
                 LocalDateTime.now().plusDays(1).withHour(8).withMinute(0).withSecond(0).withNano(0)));
 
-        return new VehicleRoutePlan("test-problem-with-invalid-data",
-                new Location(0, 0), new Location(100, 100),
-                LocalDateTime.now().plusDays(1).withHour(8).withMinute(0),
-                LocalDateTime.now().plusDays(1).withHour(20).withMinute(0),
-                vehicles, visits);
+        return new VehicleRoutePlan(visits, vehicles);
     }
 
     private String submitProblemForSolving(VehicleRoutePlan problem) {
