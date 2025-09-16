@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.acme.vehiclerouting.domain.Location;
+
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
@@ -16,7 +18,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 @JsonIdentityInfo(scope = Vehicle.class, generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
-@PlanningEntity
 public class Vehicle implements LocationAware {
 
     @PlanningId
@@ -28,7 +29,6 @@ public class Vehicle implements LocationAware {
     private LocalDateTime departureTime;
 
     @JsonIdentityReference(alwaysAsId = true)
-    @PlanningListVariable(valueRangeProviderRefs = "visitRange")
     private List<Visit> visits;
 
     public Vehicle() {

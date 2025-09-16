@@ -44,10 +44,10 @@ public class VehicleRoutePlan {
     private LocalDateTime endDateTime;
 
     @PlanningEntityCollectionProperty
+    @ValueRangeProvider(id = "vehicleRange")
     private List<Vehicle> vehicles;
 
-    @PlanningEntityCollectionProperty
-    @ValueRangeProvider
+    @PlanningEntityCollectionProperty 
     private List<Visit> visits;
 
     @PlanningScore
