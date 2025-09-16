@@ -4,8 +4,8 @@ import ai.timefold.solver.core.api.score.buildin.hardsoftlong.HardSoftLongScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
-import org.acme.vehiclerouting.domain.DeliveryAgent;
-import org.acme.vehiclerouting.domain.DeliveryOrder;
+// import org.acme.vehiclerouting.domain.DeliveryAgent;
+// import org.acme.vehiclerouting.domain.DeliveryOrder;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -31,16 +31,16 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
     public Constraint[] defineConstraints(ConstraintFactory constraintFactory) {
         return new Constraint[]{
             // Hard constraints (must not be violated)
-            agentCapacity(constraintFactory),
-            vehicleCompatibility(constraintFactory),
-            areaCompatibility(constraintFactory),
-            shiftTimeCompliance(constraintFactory),
+            // agentCapacity(constraintFactory),
+            // vehicleCompatibility(constraintFactory),
+            // areaCompatibility(constraintFactory),
+            // shiftTimeCompliance(constraintFactory),
             
             // Soft constraints (optimization goals)
-            minimizeTravelTime(constraintFactory),
-            balanceWorkload(constraintFactory),
-            prioritizeHighRatingAgents(constraintFactory),
-            minimizeLateDeliveries(constraintFactory)
+            // minimizeTravelTime(constraintFactory),
+            // balanceWorkload(constraintFactory),
+            // prioritizeHighRatingAgents(constraintFactory),
+            // minimizeLateDeliveries(constraintFactory)
         };
     }
 
@@ -52,51 +52,51 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
      * Hard constraint: Agent cannot be assigned more orders than their maximum capacity.
      * This prevents overloading agents beyond their operational limits.
      */
-    private Constraint agentCapacity(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(DeliveryAgent.class)
-                .filter(agent -> agent.getOrderCount() > agent.getMaxOrdersPerShift())
-                .penalize(HardSoftLongScore.ONE_HARD,
-                        agent -> (int) (agent.getOrderCount() - agent.getMaxOrdersPerShift()))
-                .asConstraint(AGENT_CAPACITY);
-    }
+    // private Constraint agentCapacity(ConstraintFactory constraintFactory) {
+    //     return constraintFactory.forEach(DeliveryAgent.class)
+    //             .filter(agent -> agent.getOrderCount() > agent.getMaxOrdersPerShift())
+    //             .penalize(HardSoftLongScore.ONE_HARD,
+    //                     agent -> (int) (agent.getOrderCount() - agent.getMaxOrdersPerShift()))
+    //             .asConstraint(AGENT_CAPACITY);
+    // }
 
     /**
      * Hard constraint: Orders must be assigned to agents with compatible vehicle types.
      * Ensures that delivery requirements match agent capabilities.
      */
-    private Constraint vehicleCompatibility(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(DeliveryOrder.class)
-                .filter(order -> order.getAssignedAgent() != null)
-                .filter(order -> !order.isCompatibleWithVehicle(order.getAssignedAgent().getVehicleType()))
-                .penalize(HardSoftLongScore.ONE_HARD)
-                .asConstraint(VEHICLE_COMPATIBILITY);
-    }
+    // private Constraint vehicleCompatibility(ConstraintFactory constraintFactory) {
+    //     return constraintFactory.forEach(DeliveryOrder.class)
+    //             .filter(order -> order.getAssignedAgent() != null)
+    //             .filter(order -> !order.isCompatibleWithVehicle(order.getAssignedAgent().getVehicleType()))
+    //             .penalize(HardSoftLongScore.ONE_HARD)
+    //             .asConstraint(VEHICLE_COMPATIBILITY);
+    // }
 
     /**
      * Hard constraint: Orders must be assigned to agents who can work in the delivery area.
      * Ensures agents only work in their designated geographical regions.
      */
-    private Constraint areaCompatibility(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(DeliveryOrder.class)
-                .filter(order -> order.getAssignedAgent() != null)
-                .filter(order -> !order.getAssignedAgent().canWorkInArea(order.getArea()))
-                .penalize(HardSoftLongScore.ONE_HARD)
-                .asConstraint(AREA_COMPATIBILITY);
-    }
+    // private Constraint areaCompatibility(ConstraintFactory constraintFactory) {
+    //     return constraintFactory.forEach(DeliveryOrder.class)
+    //             .filter(order -> order.getAssignedAgent() != null)
+    //             .filter(order -> !order.getAssignedAgent().canWorkInArea(order.getArea()))
+    //             .penalize(HardSoftLongScore.ONE_HARD)
+    //             .asConstraint(AREA_COMPATIBILITY);
+    // }
 
     /**
      * Hard constraint: All deliveries must be completed within agent shift times.
      * Ensures no deliveries are scheduled outside working hours.
      */
-    private Constraint shiftTimeCompliance(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(DeliveryOrder.class)
-                .filter(order -> order.getAssignedAgent() != null)
-                .filter(order -> order.getEstimatedArrivalTime() != null)
-                .filter(order -> !isDeliveryWithinShiftTime(order))
-                .penalize(HardSoftLongScore.ONE_HARD,
-                        order -> (int) calculateShiftViolationMinutes(order))
-                .asConstraint(SHIFT_TIME_COMPLIANCE);
-    }
+    // private Constraint shiftTimeCompliance(ConstraintFactory constraintFactory) {
+    //     return constraintFactory.forEach(DeliveryOrder.class)
+    //             .filter(order -> order.getAssignedAgent() != null)
+    //             .filter(order -> order.getEstimatedArrivalTime() != null)
+    //             .filter(order -> !isDeliveryWithinShiftTime(order))
+    //             .penalize(HardSoftLongScore.ONE_HARD,
+    //                     order -> (int) calculateShiftViolationMinutes(order))
+    //             .asConstraint(SHIFT_TIME_COMPLIANCE);
+    // }
 
     // ==============================================================
     // SOFT CONSTRAINTS (OPTIMIZATION GOALS)
@@ -106,48 +106,48 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
      * Soft constraint: Minimize total travel time across all agents.
      * Reduces overall operational costs and delivery times.
      */
-    private Constraint minimizeTravelTime(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(DeliveryOrder.class)
-                .filter(order -> order.getAssignedAgent() != null)
-                .penalize(HardSoftLongScore.ONE_SOFT,
-                        order -> (int) order.getTotalTravelTimeSeconds() / 60) // Convert to minutes
-                .asConstraint(MINIMIZE_TRAVEL_TIME);
-    }
+    // private Constraint minimizeTravelTime(ConstraintFactory constraintFactory) {
+    //     return constraintFactory.forEach(DeliveryOrder.class)
+    //             .filter(order -> order.getAssignedAgent() != null)
+    //             .penalize(HardSoftLongScore.ONE_SOFT,
+    //                     order -> (int) order.getTotalTravelTimeSeconds() / 60) // Convert to minutes
+    //             .asConstraint(MINIMIZE_TRAVEL_TIME);
+    // }
 
     /**
      * Soft constraint: Balance workload distribution across agents.
      * Prevents some agents from being overloaded while others are underutilized.
      */
-    private Constraint balanceWorkload(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(DeliveryAgent.class)
-                .penalize(HardSoftLongScore.ONE_SOFT,
-                        agent -> (int) calculateWorkloadImbalancePenalty(agent))
-                .asConstraint(BALANCE_WORKLOAD);
-    }
+    // private Constraint balanceWorkload(ConstraintFactory constraintFactory) {
+    //     return constraintFactory.forEach(DeliveryAgent.class)
+    //             .penalize(HardSoftLongScore.ONE_SOFT,
+    //                     agent -> (int) calculateWorkloadImbalancePenalty(agent))
+    //             .asConstraint(BALANCE_WORKLOAD);
+    // }
 
     /**
      * Soft constraint: Prioritize assigning orders to higher-rated agents.
      * Improves service quality by utilizing the best available agents.
      */
-    private Constraint prioritizeHighRatingAgents(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(DeliveryOrder.class)
-                .filter(order -> order.getAssignedAgent() != null)
-                .reward(HardSoftLongScore.ONE_SOFT,
-                        order -> (int) Math.round(order.getAssignedAgent().getRating() * 20)) // Rating * 20 for scaling
-                .asConstraint(PRIORITIZE_HIGH_RATING_AGENTS);
-    }
+    // private Constraint prioritizeHighRatingAgents(ConstraintFactory constraintFactory) {
+    //     return constraintFactory.forEach(DeliveryOrder.class)
+    //             .filter(order -> order.getAssignedAgent() != null)
+    //             .reward(HardSoftLongScore.ONE_SOFT,
+    //                     order -> (int) Math.round(order.getAssignedAgent().getRating() * 20)) // Rating * 20 for scaling
+    //             .asConstraint(PRIORITIZE_HIGH_RATING_AGENTS);
+    // }
 
     /**
      * Soft constraint: Minimize late deliveries and prioritize urgent orders.
      * Improves customer satisfaction by handling time-sensitive deliveries first.
      */
-    private Constraint minimizeLateDeliveries(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(DeliveryOrder.class)
-                .filter(order -> order.getAssignedAgent() != null)
-                .penalize(HardSoftLongScore.ONE_SOFT,
-                        order -> (int) calculateUrgencyPenalty(order))
-                .asConstraint(MINIMIZE_LATE_DELIVERIES);
-    }
+    // private Constraint minimizeLateDeliveries(ConstraintFactory constraintFactory) {
+    //     return constraintFactory.forEach(DeliveryOrder.class)
+    //             .filter(order -> order.getAssignedAgent() != null)
+    //             .penalize(HardSoftLongScore.ONE_SOFT,
+    //                     order -> (int) calculateUrgencyPenalty(order))
+    //             .asConstraint(MINIMIZE_LATE_DELIVERIES);
+    // }
 
     // ==============================================================
     // HELPER METHODS FOR CONSTRAINT CALCULATIONS
@@ -156,97 +156,97 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
     /**
      * Check if a delivery can be completed within the agent's shift time.
      */
-    private boolean isDeliveryWithinShiftTime(DeliveryOrder order) {
-        DeliveryAgent agent = order.getAssignedAgent();
-        LocalTime pickupTime = order.getPickupTime();
-        LocalTime estimatedArrivalTime = order.getEstimatedArrivalTime().toLocalTime();
+    // private boolean isDeliveryWithinShiftTime(DeliveryOrder order) {
+    //     DeliveryAgent agent = order.getAssignedAgent();
+    //     LocalTime pickupTime = order.getPickupTime();
+    //     LocalTime estimatedArrivalTime = order.getEstimatedArrivalTime().toLocalTime();
         
-        return agent.isAvailableDuring(pickupTime, estimatedArrivalTime);
-    }
+    //     return agent.isAvailableDuring(pickupTime, estimatedArrivalTime);
+    // }
 
     /**
      * Calculate how many minutes a delivery violates shift time constraints.
      */
-    private long calculateShiftViolationMinutes(DeliveryOrder order) {
-        DeliveryAgent agent = order.getAssignedAgent();
-        LocalTime estimatedArrival = order.getEstimatedArrivalTime().toLocalTime();
+    // private long calculateShiftViolationMinutes(DeliveryOrder order) {
+    //     DeliveryAgent agent = order.getAssignedAgent();
+    //     LocalTime estimatedArrival = order.getEstimatedArrivalTime().toLocalTime();
         
-        if (estimatedArrival.isAfter(agent.getShiftEnd())) {
-            return Duration.between(agent.getShiftEnd(), estimatedArrival).toMinutes();
-        }
+    //     if (estimatedArrival.isAfter(agent.getShiftEnd())) {
+    //         return Duration.between(agent.getShiftEnd(), estimatedArrival).toMinutes();
+    //     }
         
-        if (order.getPickupTime().isBefore(agent.getShiftStart())) {
-            return Duration.between(order.getPickupTime(), agent.getShiftStart()).toMinutes();
-        }
+    //     if (order.getPickupTime().isBefore(agent.getShiftStart())) {
+    //         return Duration.between(order.getPickupTime(), agent.getShiftStart()).toMinutes();
+    //     }
         
-        return 0L;
-    }
+    //     return 0L;
+    // }
 
     /**
      * Calculate workload imbalance penalty for an agent.
      * Penalizes both under-utilization and over-utilization.
      */
-    private long calculateWorkloadImbalancePenalty(DeliveryAgent agent) {
-        if (agent.getMaxOrdersPerShift() == 0) {
-            return 0L; // Avoid division by zero
-        }
+    // private long calculateWorkloadImbalancePenalty(DeliveryAgent agent) {
+    //     if (agent.getMaxOrdersPerShift() == 0) {
+    //         return 0L; // Avoid division by zero
+    //     }
         
-        double utilization = (double) agent.getOrderCount() / agent.getMaxOrdersPerShift();
+    //     double utilization = (double) agent.getOrderCount() / agent.getMaxOrdersPerShift();
         
-        // Ideal utilization range: 70-90%
-        if (utilization < 0.3) {
-            // Heavily penalize severe under-utilization (waste of resources)
-            return Math.round((0.3 - utilization) * 1000);
-        } else if (utilization < 0.7) {
-            // Moderate penalty for under-utilization
-            return Math.round((0.7 - utilization) * 300);
-        } else if (utilization <= 0.9) {
-            // Optimal range - no penalty
-            return 0L;
-        } else {
-            // Penalty for over-utilization (potential quality issues)
-            return Math.round((utilization - 0.9) * 800);
-        }
-    }
+    //     // Ideal utilization range: 70-90%
+    //     if (utilization < 0.3) {
+    //         // Heavily penalize severe under-utilization (waste of resources)
+    //         return Math.round((0.3 - utilization) * 1000);
+    //     } else if (utilization < 0.7) {
+    //         // Moderate penalty for under-utilization
+    //         return Math.round((0.7 - utilization) * 300);
+    //     } else if (utilization <= 0.9) {
+    //         // Optimal range - no penalty
+    //         return 0L;
+    //     } else {
+    //         // Penalty for over-utilization (potential quality issues)
+    //         return Math.round((utilization - 0.9) * 800);
+    //     }
+    // }
 
     /**
      * Calculate urgency penalty based on pickup time and delivery expectations.
      * Higher penalty for orders that are becoming late or urgent.
      */
-    private long calculateUrgencyPenalty(DeliveryOrder order) {
-        long basePenalty = order.getUrgencyScore();
+    // private long calculateUrgencyPenalty(DeliveryOrder order) {
+    //     long basePenalty = order.getUrgencyScore();
         
-        // Additional penalty if estimated delivery time exceeds expected time
-        if (order.getEstimatedArrivalTime() != null) {
-            LocalDateTime expectedCompletion = order.getPickupDateTime()
-                    .plusMinutes(order.getEstimatedDeliveryTimeMinutes());
+    //     // Additional penalty if estimated delivery time exceeds expected time
+    //     if (order.getEstimatedArrivalTime() != null) {
+    //         LocalDateTime expectedCompletion = order.getPickupDateTime()
+    //                 .plusMinutes(order.getEstimatedDeliveryTimeMinutes());
             
-            if (order.getEstimatedArrivalTime().isAfter(expectedCompletion)) {
-                long delayMinutes = Duration.between(expectedCompletion, 
-                                                   order.getEstimatedArrivalTime()).toMinutes();
-                basePenalty += delayMinutes * 3; // 3x penalty for delays
-            }
-        }
+    //         if (order.getEstimatedArrivalTime().isAfter(expectedCompletion)) {
+    //             long delayMinutes = Duration.between(expectedCompletion, 
+    //                                                order.getEstimatedArrivalTime()).toMinutes();
+    //             basePenalty += delayMinutes * 3; // 3x penalty for delays
+    //         }
+    //     }
         
-        // Category-based urgency multipliers
-        switch (order.getCategory().toLowerCase()) {
-            case "food":
-                basePenalty *= 2; // Food deliveries are more time-sensitive
-                break;
-            case "medical":
-            case "pharmacy":
-                basePenalty *= 3; // Medical deliveries are critical
-                break;
-            case "electronics":
-                basePenalty *= 1.5; // Electronics are moderately time-sensitive
-                break;
-            default:
-                // No additional multiplier for other categories
-                break;
-        }
+    //     // Category-based urgency multipliers
+    //     switch (order.getCategory().toLowerCase()) {
+    //         case "food":
+    //             basePenalty *= 2; // Food deliveries are more time-sensitive
+    //             break;
+    //         case "medical":
+    //         case "pharmacy":
+    //             basePenalty *= 3; // Medical deliveries are critical
+    //             break;
+    //         case "electronics":
+    //             basePenalty *= 1.5; // Electronics are moderately time-sensitive
+    //             break;
+    //         default:
+    //             // No additional multiplier for other categories
+    //             break;
+    //     }
         
-        return basePenalty;
-    }
+    //     return basePenalty;
+    // }
 
     // ==============================================================
     // ADVANCED CONSTRAINTS (OPTIONAL - UNCOMMENT IF NEEDED)
