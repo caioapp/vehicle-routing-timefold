@@ -26,7 +26,6 @@ public class DeliveryAgent {
     private String workingArea; // Urban, Suburban, etc.
 
     // Shadow variable - orders assigned to this agent
-    @InverseRelationShadowVariable(sourceVariableName = "assignedAgent")
     private List<DeliveryOrder> assignedOrders;
 
     // No-arg constructor for Timefold

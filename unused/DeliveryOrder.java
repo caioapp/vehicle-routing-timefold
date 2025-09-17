@@ -37,8 +37,6 @@ public class DeliveryOrder {
     private DeliveryAgent assignedAgent;
 
     // Shadow variables - calculated automatically
-    @ShadowVariable(variableListenerClass = DeliveryTimeUpdatingVariableListener.class, 
-                   sourceVariableName = "assignedAgent")
     private LocalDateTime estimatedArrivalTime;
 
     // No-arg constructor for Timefold

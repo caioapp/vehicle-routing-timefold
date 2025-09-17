@@ -1,51 +1,53 @@
 package org.acme.vehiclerouting.domain;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 
-import java.time.LocalDateTime;
 import java.time.Duration;
+import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @PlanningEntity
 public class Visit {
-
     private String id;
     private String name;
     private Location location;
     private int demand;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime minStartTime;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") 
     private LocalDateTime maxEndTime;
-    private long serviceDuration;  // in seconds
-
-    @JsonBackReference
+    
+    private long serviceDuration;
+    
+    // Main planning variables
     @PlanningVariable(valueRangeProviderRefs = "vehicleRange")
     private Vehicle vehicle;
     
-    @PlanningVariable(valueRangeProviderRefs = "visitRange") 
+    @PlanningVariable(valueRangeProviderRefs = "visitRange", nullable = true)
     private Visit previousVisit;
     
-    // Solver-calculated fields
+    // Shadow variables (auto-calculated)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime arrivalTime;
-    private LocalDateTime departureTime;  // Store directly, don't calculate
+    
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime departureTime;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime startServiceTime;
+    
     private long drivingTimeSecondsFromPreviousStandstill;
-
-
-    public void setVehicle(Vehicle vehicle) {
-        this.vehicle = vehicle;
-    }
-
-    public Vehicle getVehicle() {
-        return vehicle;
-    }
-
-
-    public Visit getPreviousVisit() {
-        return previousVisit;
-    }
+    
+    // CRITICAL: Must have ALL getters and setters
+    public Vehicle getVehicle() { return vehicle; }
+    public void setVehicle(Vehicle vehicle) { this.vehicle = vehicle; }
+    
+    public Visit getPreviousVisit() { return previousVisit; }
 
     public void setPreviousVisit(Visit previousVisit) {
         this.previousVisit = previousVisit;

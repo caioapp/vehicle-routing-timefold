@@ -3,7 +3,6 @@ package org.acme.vehiclerouting.domain;
 import ai.timefold.solver.core.api.domain.solution.PlanningEntityCollectionProperty;
 import ai.timefold.solver.core.api.domain.solution.PlanningScore;
 import ai.timefold.solver.core.api.domain.solution.PlanningSolution;
-import ai.timefold.solver.core.api.domain.solution.ProblemFactCollectionProperty;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.buildin.hardsoftlong.HardSoftLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
@@ -15,14 +14,15 @@ import java.util.ArrayList;
 @PlanningSolution
 public class VehicleRoutePlan {
 
-    @ValueRangeProvider(id = "visitRange")
-    @PlanningEntityCollectionProperty  
-    private List<Visit> visits;
 
+    @PlanningEntityCollectionProperty
     @ValueRangeProvider(id = "vehicleRange")
-    @ProblemFactCollectionProperty
     private List<Vehicle> vehicles;
-
+    
+    @PlanningEntityCollectionProperty  
+    @ValueRangeProvider(id = "visitRange")
+    private List<Visit> visits;
+    
     @PlanningScore
     private HardSoftLongScore score;
 

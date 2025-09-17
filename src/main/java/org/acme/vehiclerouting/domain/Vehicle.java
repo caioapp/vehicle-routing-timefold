@@ -12,18 +12,29 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
 
+
 public class Vehicle {
 
     private String id;
-    private String style;  // motorcycle, scooter, van
+    private String style;
     private Location homeLocation;
     private int capacity;
-
+    
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime departureTime;
-
-    @JsonManagedReference
+    
     private List<Visit> visits;
+    
+    // Constructor ensuring departureTime is set
+    public Vehicle(String id, String style, Location homeLocation, int capacity, LocalDateTime departureTime) {
+        this.id = id;
+        this.style = style;
+        this.homeLocation = homeLocation;
+        this.capacity = capacity;
+        this.departureTime = departureTime;  // ✅ CRITICAL: Actually set this!
+        this.visits = new ArrayList<>();
+    }
+
 
     // Solver-calculated fields - stored directly, not calculated
     private int totalDemand;
@@ -63,17 +74,6 @@ public class Vehicle {
         this.homeLocation = homeLocation;
         this.visits = new ArrayList<>();
         this.capacity = 10; // default
-    }
-
-    // Full constructor
-    public Vehicle(String id, String style, Location homeLocation, 
-                   int capacity, LocalDateTime departureTime) {
-        this.id = id;
-        this.style = style;
-        this.homeLocation = homeLocation;
-        this.capacity = capacity;
-        this.departureTime = departureTime;
-        this.visits = new ArrayList<>();
     }
 
     // SAFE getters and setters
