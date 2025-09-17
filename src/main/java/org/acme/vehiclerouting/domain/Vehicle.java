@@ -3,21 +3,26 @@ package org.acme.vehiclerouting.domain;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
 
-@PlanningEntity
 public class Vehicle {
 
     private String id;
     private String style;  // motorcycle, scooter, van
     private Location homeLocation;
     private int capacity;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime departureTime;
 
-    @PlanningListVariable
+    @JsonManagedReference
     private List<Visit> visits;
 
     // Solver-calculated fields - stored directly, not calculated

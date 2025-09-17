@@ -15,11 +15,12 @@ import java.util.ArrayList;
 @PlanningSolution
 public class VehicleRoutePlan {
 
-    @ProblemFactCollectionProperty
-    @ValueRangeProvider
+    @ValueRangeProvider(id = "visitRange")
+    @PlanningEntityCollectionProperty  
     private List<Visit> visits;
 
-    @PlanningEntityCollectionProperty  
+    @ValueRangeProvider(id = "vehicleRange")
+    @ProblemFactCollectionProperty
     private List<Vehicle> vehicles;
 
     @PlanningScore

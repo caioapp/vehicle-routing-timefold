@@ -1,9 +1,15 @@
 package org.acme.vehiclerouting.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
+import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
+
 import java.time.LocalDateTime;
 import java.time.Duration;
 
+@PlanningEntity
 public class Visit {
 
     private String id;
@@ -13,9 +19,14 @@ public class Visit {
     private LocalDateTime minStartTime;
     private LocalDateTime maxEndTime;
     private long serviceDuration;  // in seconds
-    private Vehicle vehicle;
-    private Visit previousVisit;
 
+    @JsonBackReference
+    @PlanningVariable(valueRangeProviderRefs = "vehicleRange")
+    private Vehicle vehicle;
+    
+    @PlanningVariable(valueRangeProviderRefs = "visitRange") 
+    private Visit previousVisit;
+    
     // Solver-calculated fields
     private LocalDateTime arrivalTime;
     private LocalDateTime departureTime;  // Store directly, don't calculate

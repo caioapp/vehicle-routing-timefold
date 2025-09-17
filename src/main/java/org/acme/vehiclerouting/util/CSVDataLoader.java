@@ -186,8 +186,8 @@ public class CSVDataLoader {
                 "amazon-delivery-csv-problem",
                 southWest,
                 northEast,
-                LocalDateTime.now().plusDays(1).withHour(6).withMinute(0).withSecond(0).withNano(0),
-                LocalDateTime.now().plusDays(1).withHour(22).withMinute(0).withSecond(0).withNano(0),
+                LocalDateTime.of(2022, 02, 11, 06, 0, 0),
+                LocalDateTime.of(2022, 04, 06, 22, 0, 0),
                 vehicles,
                 visits
         );
