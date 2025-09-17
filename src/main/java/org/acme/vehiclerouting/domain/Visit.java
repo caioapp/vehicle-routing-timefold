@@ -29,6 +29,7 @@ public class Visit {
     private Vehicle vehicle;
     
     @PlanningVariable(valueRangeProviderRefs = "visitRange", nullable = true)
+    @JsonIgnore
     private Visit previousVisit;
     
     // Shadow variables (auto-calculated)
