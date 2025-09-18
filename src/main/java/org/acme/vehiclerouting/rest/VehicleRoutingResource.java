@@ -127,7 +127,7 @@ public class VehicleRoutingResource {
                 vehicleData.put("style", vehicle.getStyle());
                 vehicleData.put("capacity", vehicle.getCapacity());
 
-                // CRITICAL: Frontend expects "location" property with [lat, lon] array
+                // Frontend expects "location" property with [lat, lon] array
                 double[] location = {
                     vehicle.getHomeLocation().getLatitude(),
                     vehicle.getHomeLocation().getLongitude()

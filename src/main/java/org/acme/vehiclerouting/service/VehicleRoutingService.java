@@ -25,7 +25,7 @@ public class VehicleRoutingService {
 
     public VehicleRoutePlan getProblem() {
     if (currentProblem == null) {
-        // currentProblem = dataService.createSafeProblem();
+        currentProblem = dataService.createSafeProblem();
     }
     return currentProblem;
 }

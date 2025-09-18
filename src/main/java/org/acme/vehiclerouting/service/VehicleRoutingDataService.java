@@ -5,6 +5,7 @@ import org.acme.vehiclerouting.domain.VehicleRoutePlan;
 import org.acme.vehiclerouting.domain.Vehicle;
 import org.acme.vehiclerouting.domain.Visit;
 import org.acme.vehiclerouting.domain.Location;
+import org.acme.vehiclerouting.util.CSVDataLoader;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -15,6 +16,23 @@ import java.time.format.DateTimeFormatter;
 
 @ApplicationScoped
 public class VehicleRoutingDataService {
+
+    public VehicleRoutePlan loadFromCSV() {
+        VehicleRoutePlan plan = null;
+        try {
+            CSVDataLoader.CSVLoadResult result = CSVDataLoader.loadFromCSV();
+            plan = result.getProblem();
+            System.out.println("Loaded problem from CSV with " + 
+                plan.getVehicles().size() + " vehicles and " + 
+                plan.getVisits().size() + " visits");
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            
+            return plan;
+
+    }
 
     /**
      * Creates the Amazon delivery problem
@@ -89,17 +107,7 @@ public class VehicleRoutingDataService {
 
         LocalDateTime departureTime = LocalDateTime.of(2022, 9, 17, 8, 0);
 
-        // Reduce to 5 vehicles for better performance
-        vehicles.add(createVehicle("vehicle-1", "motorcycle", 
-            new Location(23.374878, 85.335739), 8, departureTime));
-        vehicles.add(createVehicle("vehicle-2", "scooter", 
-            new Location(21.186438, 72.794115), 12, departureTime));
-        vehicles.add(createVehicle("vehicle-3", "van", 
-            new Location(18.55144, 73.804855), 18, departureTime));
-        vehicles.add(createVehicle("vehicle-4", "motorcycle", 
-            new Location(17.451976, 78.385883), 8, departureTime));
-        vehicles.add(createVehicle("vehicle-5", "scooter", 
-            new Location(11.003669, 76.976494), 12, departureTime));
+        
 
         System.out.println("Created Amazon fleet with " + vehicles.size() + " vehicles");
         return vehicles;
@@ -165,6 +173,15 @@ public class VehicleRoutingDataService {
 
         System.out.println("Created " + visits.size() + " Amazon delivery visits");
         return visits;
+    }
+
+    // Loads from CSV file in resources
+    public VehicleRoutePlan createSafeProblem() {
+        
+        VehicleRoutePlan plan = loadFromCSV();
+        System.out.println("Created safe Amazon delivery problem: " + plan.toString());
+
+        return plan;
     }
 
     private Visit createVisit(String id, String name, Location location,
