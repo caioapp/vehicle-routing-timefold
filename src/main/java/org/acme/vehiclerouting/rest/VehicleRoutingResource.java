@@ -41,7 +41,8 @@ public class VehicleRoutingResource {
 
             VehicleRoutePlan problem = solvingService.getProblem();
             if (problem == null) {
-                problem = dataService.createAmazonDeliveryProblem();
+                // problem = dataService.createAmazonDeliveryProblem();
+                System.out.println("No problem found");
             }
 
             // Convert to frontend-compatible structure
@@ -56,7 +57,8 @@ public class VehicleRoutingResource {
         } catch (Exception e) {
             System.err.println("ERROR in /vehicleRoute: " + e.getMessage());
             e.printStackTrace();
-            return getHardcodedFrontendData();
+            // return getHardcodedFrontendData();
+            return null;
         }
     }
 
@@ -77,7 +79,8 @@ public class VehicleRoutingResource {
         } catch (Exception e) {
             System.err.println("ERROR in /demo-data: " + e.getMessage());
             e.printStackTrace();
-            return getHardcodedFrontendData();
+            // return getHardcodedFrontendData();
+            return null;
         }
     }
 
@@ -108,7 +111,8 @@ public class VehicleRoutingResource {
         } catch (Exception e) {
             System.err.println("ERROR in /solve: " + e.getMessage());
             e.printStackTrace();
-            return getHardcodedFrontendData();
+            // return getHardcodedFrontendData();
+            return null;
         }
     }
 
@@ -223,7 +227,7 @@ public class VehicleRoutingResource {
     /**
      * Hardcoded fallback data in frontend-compatible format
      */
-    private Response getHardcodedFrontendData() {
+    /* private Response getHardcodedFrontendData() {
         System.out.println("Using hardcoded frontend-compatible fallback data");
 
         Map<String, Object> data = new HashMap<>();
@@ -274,7 +278,7 @@ public class VehicleRoutingResource {
         data.put("visitCount", visits.size());
 
         return Response.ok(data).build();
-    }
+    } */
 
     @GET
     @Path("/health")

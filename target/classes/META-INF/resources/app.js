@@ -508,7 +508,7 @@ function stopSolving() {
 }
 
 function fetchDemoData() {
-    $.get("/demo-data", function (data) {
+    $.get("/vehicleRoute", function (data) {
         data.forEach(function (item) {
             $("#testDataButton").append($('<a id="' + item + 'TestData" class="dropdown-item" href="#">' + item + '</a>'));
 
@@ -535,6 +535,34 @@ function fetchDemoData() {
         $("#demo").html("<h1><p style=\"justify-content: center\">No test data available</p></h1>")
     });
 }
+/* function fetchDemoData() {
+    $.get("/demo-data", function (data) {
+        data.forEach(function (item) {
+            $("#testDataButton").append($('<a id="' + item + 'TestData" class="dropdown-item" href="#">' + item + '</a>'));
+
+            $("#" + item + "TestData").click(function () {
+                switchDataDropDownItemActive(item);
+                scheduleId = null;
+                demoDataId = item;
+                initialized = false;
+                homeLocationGroup.clearLayers();
+                homeLocationMarkerByIdMap.clear();
+                visitGroup.clearLayers();
+                visitMarkerByIdMap.clear();
+                refreshRoutePlan();
+            });
+        });
+
+        demoDataId = data[0];
+        switchDataDropDownItemActive(demoDataId);
+
+        refreshRoutePlan();
+    }).fail(function (xhr, ajaxOptions, thrownError) {
+        // disable this page as there is no data
+        $("#demo").empty();
+        $("#demo").html("<h1><p style=\"justify-content: center\">No test data available</p></h1>")
+    });
+} */
 
 function switchDataDropDownItemActive(newItem) {
     activeCssClass = "active";
