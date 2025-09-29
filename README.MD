@@ -1,144 +1,171 @@
-# Vehicle Routing with time windows and capacity planning (Java, Quarkus, Maven)
+# Vehicle Routing with Timefold Solver
 
-Find the most efficient routes for a fleet of vehicles.
+A Java-based vehicle routing optimization application using **Timefold Solver**, **Quarkus**, and **Maven**. This project demonstrates how to solve vehicle routing problems with time windows and capacity planning constraints.
 
-![Vehicle Routing Screenshot](./vehicle-routing-screenshot.png)
+![Vehicle Routing Screenshot](vehicle-routing-screenshot.png)
 
-- [Run the application](#run-the-application)
-- [Run the application with Timefold Solver Enterprise Edition](#run-the-application-with-timefold-solver-enterprise-edition)
-- [Run the packaged application](#run-the-packaged-application)
-- [Run the application in a container](#run-the-application-in-a-container)
-- [Run it native](#run-it-native)
+## 🚀 Features
 
-> [!TIP]  
-> <img src="https://docs.timefold.ai/_/img/models/field-service-routing.svg" align="right" width="50px" /> [Check out our off-the-shelf model for Field Service Routing](https://app.timefold.ai/models/field-service-routing/v1). This model goes beyond basic Vehicle Routing and supports additional constraints such as priorities, skills, fairness and more.
+- **Vehicle Route Optimization**: Find the most efficient routes for a fleet of vehicles
+- **Time Windows**: Support for delivery time constraints  
+- **Capacity Planning**: Vehicle capacity and load optimization
+- **Real-time Solving**: Live optimization with immediate visual feedback
+- **Web Interface**: Interactive UI for configuring and visualizing routes
+- **REST API**: Programmatic access to optimization functions
 
-## Prerequisites
+## 📋 Prerequisites
 
-1. Install Java and Maven, for example with [Sdkman](https://sdkman.io):
-   ```sh
-   $ sdk install java
-   $ sdk install maven
+1. **Java 17 or later** - Install with [SDKMAN](https://sdkman.io/):
+   ```bash
+   sdk install java
    ```
 
-## Run the application
-
-1. Git clone the timefold-quickstarts repo and navigate to this directory:
-   ```sh
-   $ git clone https://github.com/TimefoldAI/timefold-quickstarts.git
-   ...
-   $ cd timefold-quickstarts/java/vehicle-routing
+2. **Maven 3.6+** - Install with SDKMAN:
+   ```bash
+   sdk install maven
    ```
 
-2. Start the application with Maven:
-   ```sh
-   $ mvn quarkus:dev
+## 🛠️ Getting Started
+
+### Clone and Run
+
+1. **Clone this repository**:
+   ```bash
+   git clone https://github.com/caioapp/vehicle-routing-timefold.git
+   cd vehicle-routing-timefold
    ```
 
-3. Visit [http://localhost:8080](http://localhost:8080) in your browser.
+2. **Start the application**:
+   ```bash
+   mvn quarkus:dev
+   ```
 
-4. Click on the **Solve** button.
+3. **Open your browser** and visit: http://localhost:8080
 
-Then try _live coding_:
+4. **Click the "Solve" button** to see the optimization in action!
 
-- Make some changes in the source code.
-- Refresh your browser (F5). 
-- Notice that those changes are immediately visible.
+### Live Development
 
-## Run the application with Timefold Solver Enterprise Edition
+Quarkus supports live coding - make changes to your source code and refresh the browser (F5) to see them immediately applied without restarting the application.
 
-For high-scalability use cases, switch to [Timefold Solver Enterprise Edition](https://docs.timefold.ai/timefold-solver/latest/enterprise-edition/enterprise-edition), our commercial offering.  
-[Contact Timefold](https://timefold.ai/contact) to obtain the credentials required to access our private Enterprise Maven repository.
+## 🏢 Enterprise Edition (Optional)
 
-1. Create `.m2/settings.xml` in your home directory with the following content:
+For high-scalability production use cases, you can switch to **Timefold Solver Enterprise Edition**:
+
+1. **Configure Maven settings** - Create `.m2/settings.xml` in your home directory:
    ```xml
    <settings>
-     ...
      <servers>
        <server>
-         <!-- Replace "my_username" and "my_password" with credentials obtained from a Timefold representative. -->
          <id>timefold-solver-enterprise</id>
-         <username>my_username</username>
-         <password>my_password</password>
+         <username>your_username</username>
+         <password>your_password</password>
        </server>
      </servers>
-     ...
    </settings>
    ```
+   > Contact [Timefold](https://timefold.ai/contact) to obtain enterprise credentials.
 
-   See [Settings Reference](https://maven.apache.org/settings.html) for more information on Maven settings.
-
-2. Start the application with Maven:
-   ```sh
-   $ mvn clean quarkus:dev -Denterprise
+2. **Run with Enterprise Edition**:
+   ```bash
+   mvn clean quarkus:dev -Denterprise
    ```
 
-3. Visit [http://localhost:8080](http://localhost:8080) in your browser.
+## 📦 Production Deployment
 
-4. Click on the **Solve** button.
+### Package as JAR
 
-Then try _live coding_:
-
-- Make some changes in the source code.
-- Refresh your browser (F5).
-
-Notice that those changes are immediately in effect.
-
-## Run the packaged application
-
-When you're done iterating in `quarkus:dev` mode, package the application to run as a conventional jar file.
-
-1. Compile it with Maven:
-   ```sh
-   $ mvn package
+1. **Build the application**:
+   ```bash
+   mvn package
    ```
 
-2. Run it:
-   ```sh
-   $ java -jar ./target/quarkus-app/quarkus-run.jar
+2. **Run the packaged JAR**:
+   ```bash
+   java -jar ./target/quarkus-app/quarkus-run.jar
    ```
 
-   > **Note**  
-   > To run it on port 8081 instead, add `-Dquarkus.http.port=8081`.
-
-3. Visit [http://localhost:8080](http://localhost:8080) in your browser.
-
-4. Click on the **Solve** button.
-
-## Run the application in a container
-
-1. Build a container image:
-   ```sh
-   $ mvn package -Dcontainer
-   ```
-   The container image name
-
-2. Run a container:
-   ```sh
-   $ docker run -p 8080:8080 --rm $USER/vehicle-routing:1.0-SNAPSHOT
+   To use a different port:
+   ```bash
+   java -jar ./target/quarkus-app/quarkus-run.jar -Dquarkus.http.port=8081
    ```
 
-## Run it native
+### Docker Container
 
-To increase startup performance for serverless deployments, build the application as a native executable:
-
-1. [Install GraalVM and gu install the native-image tool](https://quarkus.io/guides/building-native-image#configuring-graalvm).
-
-2. Compile it natively.  
-   This takes a few minutes:
-   ```sh
-   $ mvn package -Dnative
+1. **Build container image**:
+   ```bash
+   mvn package -Dcontainer
    ```
 
-3. Run the native executable:
-   ```sh
-   $ ./target/*-runner
+2. **Run container**:
+   ```bash
+   docker run -p 8080:8080 --rm $USER/vehicle-routing:1.0-SNAPSHOT
    ```
 
-4. Visit [http://localhost:8080](http://localhost:8080) in your browser.
+### Native Executable (GraalVM)
 
-5. Click on the **Solve** button.
+For serverless deployments with faster startup times:
 
-## More information
+1. **Install GraalVM** and the native-image tool
+2. **Compile natively** (takes several minutes):
+   ```bash
+   mvn package -Dnative
+   ```
+3. **Run the native executable**:
+   ```bash
+   ./target/*-runner
+   ```
 
-Visit [timefold.ai](https://timefold.ai).
+## 🏗️ Project Structure
+
+```
+src/main/java/org/acme/vehiclerouting/
+├── domain/
+│   ├── dto/           # Data transfer objects
+│   ├── geo/           # Geographic utilities  
+│   ├── Location.java  # Location entity
+│   ├── Vehicle.java   # Vehicle entity
+│   ├── Visit.java     # Visit/customer entity
+│   └── VehicleRoutePlan.java  # Solution class
+├── rest/              # REST API endpoints
+├── solver/            # Constraint definitions
+└── ...
+```
+
+## 🔧 Key Technologies
+
+- **[Timefold Solver](https://timefold.ai/)** - AI constraint solver for optimization
+- **[Quarkus](https://quarkus.io/)** - Supersonic Java framework  
+- **Maven** - Project management and build tool
+- **RESTEasy** - JAX-RS implementation for REST APIs
+- **Jackson** - JSON processing
+- **Bootstrap & jQuery** - Frontend UI framework
+
+## 📊 API Endpoints
+
+- `GET /vehicle-routing` - Get current route plan
+- `POST /vehicle-routing/solve` - Start optimization
+- `POST /vehicle-routing/stop-solving` - Stop current optimization
+- `GET /demo-data` - Load demonstration dataset
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)  
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📚 Resources
+
+- [Timefold Solver Documentation](https://timefold.ai/docs)
+- [Quarkus Guides](https://quarkus.io/guides/)
+- [Vehicle Routing Problem Overview](https://en.wikipedia.org/wiki/Vehicle_routing_problem)
+
+## 📄 License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+---
+
+💡 **Tip**: Check out Timefold's [Field Service Routing](https://timefold.ai/docs/timefold-solver/latest/use-cases-and-examples/vehicle-routing/vehicle-routing#field-service-routing) for advanced features like priorities, skills, and fairness constraints.
