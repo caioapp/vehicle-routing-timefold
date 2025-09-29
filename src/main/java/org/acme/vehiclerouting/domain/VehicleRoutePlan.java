@@ -8,6 +8,13 @@ import ai.timefold.solver.core.api.score.buildin.hardsoftlong.HardSoftLongScore;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 
 import java.util.List;
+import java.util.stream.Stream;
+
+import org.acme.vehiclerouting.domain.geo.DrivingTimeCalculator;
+import org.acme.vehiclerouting.domain.geo.HaversineDrivingTimeCalculator;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
@@ -16,11 +23,10 @@ public class VehicleRoutePlan {
 
 
     @PlanningEntityCollectionProperty
-    @ValueRangeProvider(id = "vehicleRange")
     private List<Vehicle> vehicles;
     
     @PlanningEntityCollectionProperty  
-    @ValueRangeProvider(id = "visitRange")
+    @ValueRangeProvider
     private List<Visit> visits;
     
     @PlanningScore
@@ -35,7 +41,6 @@ public class VehicleRoutePlan {
     // CHANGED: Use SolverStatus enum instead of String
     private SolverStatus solverStatus;
     private String scoreExplanation;
-    private long totalDrivingTimeSeconds;
 
     // Default constructor for Timefold
     public VehicleRoutePlan() {
@@ -45,6 +50,25 @@ public class VehicleRoutePlan {
         this.southWestCorner = new Location(10.033064, 72.784115);
         this.northEastCorner = new Location(30.929584, 88.395507);
         this.solverStatus = SolverStatus.NOT_SOLVING;
+
+        List<Location> locations = Stream.concat(
+                vehicles.stream().map(Vehicle::getHomeLocation),
+                visits.stream().map(Visit::getLocation)).toList();
+
+        DrivingTimeCalculator drivingTimeCalculator = HaversineDrivingTimeCalculator.getInstance();
+        drivingTimeCalculator.initDrivingTimeMaps(locations);
+    }
+
+    public VehicleRoutePlan(String name, HardSoftLongScore score, SolverStatus solverStatus) {
+        this.name = name;
+        this.score = score;
+        this.solverStatus = solverStatus;
+        List<Location> locations = Stream.concat(
+                vehicles.stream().map(Vehicle::getHomeLocation),
+                visits.stream().map(Visit::getLocation)).toList();
+
+        DrivingTimeCalculator drivingTimeCalculator = HaversineDrivingTimeCalculator.getInstance();
+        drivingTimeCalculator.initDrivingTimeMaps(locations);
     }
 
     public VehicleRoutePlan(List<Visit> visits, List<Vehicle> vehicles) {
@@ -54,6 +78,13 @@ public class VehicleRoutePlan {
         this.southWestCorner = new Location(10.033064, 72.784115);
         this.northEastCorner = new Location(30.929584, 88.395507);
         this.solverStatus = SolverStatus.NOT_SOLVING;
+
+        List<Location> locations = Stream.concat(
+                vehicles.stream().map(Vehicle::getHomeLocation),
+                visits.stream().map(Visit::getLocation)).toList();
+
+        DrivingTimeCalculator drivingTimeCalculator = HaversineDrivingTimeCalculator.getInstance();
+        drivingTimeCalculator.initDrivingTimeMaps(locations);
     }
 
     // Constructor that template expects
@@ -68,6 +99,18 @@ public class VehicleRoutePlan {
         this.vehicles = vehicles != null ? vehicles : new ArrayList<>();
         this.visits = visits != null ? visits : new ArrayList<>();
         this.solverStatus = SolverStatus.NOT_SOLVING;
+
+        List<Location> locations = Stream.concat(
+                vehicles.stream().map(Vehicle::getHomeLocation),
+                visits.stream().map(Visit::getLocation)).toList();
+
+        DrivingTimeCalculator drivingTimeCalculator = HaversineDrivingTimeCalculator.getInstance();
+        drivingTimeCalculator.initDrivingTimeMaps(locations);
+    }
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public long getTotalDrivingTimeSeconds() {
+        return vehicles == null ? 0 : vehicles.stream().mapToLong(Vehicle::getTotalDrivingTimeSeconds).sum();
     }
 
     // Getters and setters
@@ -99,10 +142,6 @@ public class VehicleRoutePlan {
     public String getScoreExplanation() { return scoreExplanation; }
     public void setScoreExplanation(String scoreExplanation) { this.scoreExplanation = scoreExplanation; }
 
-    public long getTotalDrivingTimeSeconds() { return totalDrivingTimeSeconds; }
-    public void setTotalDrivingTimeSeconds(long totalDrivingTimeSeconds) { 
-        this.totalDrivingTimeSeconds = totalDrivingTimeSeconds; 
-    }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

@@ -439,20 +439,6 @@ function solve() {
             refreshSolvingButtons(false);
         },
         "text");
-
-    fetch('/solve', {method: 'POST'})
-        .then(response => {
-            console.log('Solve response status:', response.status);
-            return response.json();
-        })
-        .then(data => {
-            console.log('Solution received:', data);
-            // Update your UI here
-        })
-        .catch(error => {
-            console.error('Solve error:', error);
-        });
-
 }
 
 function refreshSolvingButtons(solving) {
@@ -482,8 +468,7 @@ function refreshRoutePlan() {
             alert("Please select a test data set.");
             return;
         }
-
-        path = "/demo-data/" + demoDataId;
+        path = "/vehicleRoute"; // Change here from "/demo-data/" + demoDataId
     }
 
     $.getJSON(path, function (routePlan) {
@@ -509,9 +494,18 @@ function stopSolving() {
 
 function fetchDemoData() {
     $.get("/vehicleRoute", function (data) {
-        data.forEach(function (item) {
-            $("#testDataButton").append($('<a id="' + item + 'TestData" class="dropdown-item" href="#">' + item + '</a>'));
 
+        var list = [];
+        if (data && typeof data.name === "string") list = [data.name];
+
+        if (list.length === 0) {
+            $("#demo").empty();
+            $("#demo").html('<h1><p style="justify-content: center">No test data available</p></h1>');
+            return;
+        }
+
+        list.forEach(function (item) {
+            $("#testDataButton").append($('<a id="' + item + 'TestData" class="dropdown-item" href="#">' + item + '</a>'));
             $("#" + item + "TestData").click(function () {
                 switchDataDropDownItemActive(item);
                 scheduleId = null;
@@ -525,16 +519,17 @@ function fetchDemoData() {
             });
         });
 
-        demoDataId = data[0];
+        demoDataId = list[0];
         switchDataDropDownItemActive(demoDataId);
 
         refreshRoutePlan();
     }).fail(function (xhr, ajaxOptions, thrownError) {
-        // disable this page as there is no data
         $("#demo").empty();
-        $("#demo").html("<h1><p style=\"justify-content: center\">No test data available</p></h1>")
+        $("#demo").html("<h1><p style=\"justify-content: center\">No test data available</p></h1>");
     });
 }
+
+
 /* function fetchDemoData() {
     $.get("/demo-data", function (data) {
         data.forEach(function (item) {

@@ -50,8 +50,6 @@ public class VehicleRoutingDataService {
         plan.setEndDateTime("2022-04-06T22:00:00");
         plan.setSolverStatus(SolverStatus.NOT_SOLVING);
         plan.setScoreExplanation("Initial Amazon delivery problem");
-        plan.setTotalDrivingTimeSeconds(0);
-
         System.out.println("Created Amazon delivery problem: " + plan.toString());
 
         return plan;
@@ -95,8 +93,6 @@ public class VehicleRoutingDataService {
         plan.setEndDateTime("2022-09-17T18:00:00");
         plan.setSolverStatus(SolverStatus.NOT_SOLVING);
         plan.setScoreExplanation("Minimal test problem");
-        plan.setTotalDrivingTimeSeconds(0);
-
         System.out.println("Created minimal test problem: " + plan.toString());
 
         return plan;
@@ -105,7 +101,6 @@ public class VehicleRoutingDataService {
     private List<Vehicle> createAmazonVehicleFleet() {
         List<Vehicle> vehicles = new ArrayList<>();
 
-        LocalDateTime departureTime = LocalDateTime.of(2022, 9, 17, 8, 0);
 
         
 
@@ -116,8 +111,6 @@ public class VehicleRoutingDataService {
     private Vehicle createVehicle(String id, String style, Location location, 
                                  int capacity, LocalDateTime departureTime) {
         Vehicle vehicle = new Vehicle(id, style, location, capacity, departureTime);
-        vehicle.setTotalDemand(0);
-        vehicle.setTotalDrivingTimeSeconds(0);
         return vehicle;
     }
 
@@ -190,12 +183,10 @@ public class VehicleRoutingDataService {
         visit.setDemand(1);
         visit.setMinStartTime(parseDateTime(minStartTime));
         visit.setMaxEndTime(parseDateTime(maxEndTime));
-        visit.setServiceDuration(serviceDuration);
 
         visit.setArrivalTime(null);
         visit.setDepartureTime(null);
         visit.setStartServiceTime(null);
-        visit.setDrivingTimeSecondsFromPreviousStandstill(0);
 
         return visit;
     }

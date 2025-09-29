@@ -10,27 +10,20 @@ import org.acme.vehiclerouting.domain.Visit;
 
 public class VehicleRoutingConstraintProvider implements ConstraintProvider {
 
+    public static final String MINIMIZE_TRAVEL_TIME = "minimizeTravelTime";
+    public static final String VEHICLE_CAPACITY = "vehicleCapacity";
+
+
     @Override
     public Constraint[] defineConstraints(ConstraintFactory constraintFactory) {
         return new Constraint[] {
-            // Hard constraints
             vehicleCapacity(constraintFactory),
-
-            // Soft constraints (simplified to avoid infinite loops)
             minimizeTotalVehicles(constraintFactory),
-            minimizeUnassignedVisits(constraintFactory)
+            minimizeUnassignedVisits(constraintFactory),
+            minimizeTravelTime(constraintFactory)
         };
     }
 
-    // CRITICAL: Simple vehicle capacity constraint (no complex calculations)
-    Constraint vehicleCapacity(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(Vehicle.class)
-            .filter(vehicle -> vehicle.getVisits() != null && 
-                             vehicle.getVisits().size() > vehicle.getCapacity())
-            .penalize(HardSoftLongScore.ONE_HARD,
-                vehicle -> vehicle.getVisits().size() - vehicle.getCapacity())
-            .asConstraint("Vehicle capacity exceeded");
-    }
 
     // SIMPLE: Minimize number of vehicles used
     Constraint minimizeTotalVehicles(ConstraintFactory constraintFactory) {
@@ -46,5 +39,20 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
             .filter(visit -> visit.getVehicle() == null)
             .penalize(HardSoftLongScore.of(0, 1000), visit -> 1)
             .asConstraint("Minimize unassigned visits");
+    }
+
+    protected Constraint vehicleCapacity(ConstraintFactory factory) {
+        return factory.forEach(Vehicle.class)
+                .filter(vehicle -> vehicle.getTotalDemand() > vehicle.getCapacity())
+                .penalizeLong(HardSoftLongScore.ONE_HARD,
+                        vehicle -> vehicle.getTotalDemand() - vehicle.getCapacity())
+                .asConstraint(VEHICLE_CAPACITY);
+    }
+
+    protected Constraint minimizeTravelTime(ConstraintFactory factory) {
+        return factory.forEach(Vehicle.class)
+                .penalizeLong(HardSoftLongScore.ONE_SOFT,
+                        Vehicle::getTotalDrivingTimeSeconds)
+                .asConstraint(MINIMIZE_TRAVEL_TIME);
     }
 }

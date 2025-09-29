@@ -1,13 +1,9 @@
 org\acme\vehiclerouting\domain\geo\HaversineDrivingTimeCalculator$CartesianCoordinate.class
-org\acme\vehiclerouting\rest\VehicleRouteDemoResource.class
 org\acme\vehiclerouting\domain\geo\DrivingTimeCalculator.class
 org\acme\vehiclerouting\rest\exception\ErrorInfo.class
 org\acme\vehiclerouting\domain\geo\HaversineDrivingTimeCalculator.class
 org\acme\vehiclerouting\domain\Location.class
 org\acme\vehiclerouting\domain\Visit.class
-org\acme\vehiclerouting\rest\VehicleRoutePlanResource.class
-org\acme\vehiclerouting\rest\VehicleRouteDemoResource$DemoData.class
-org\acme\vehiclerouting\rest\VehicleRoutePlanResource$Job.class
 org\acme\vehiclerouting\domain\dto\RecommendationRequest.class
 org\acme\vehiclerouting\domain\dto\VehicleRecommendation.class
 org\acme\vehiclerouting\solver\VehicleRoutingConstraintProvider.class

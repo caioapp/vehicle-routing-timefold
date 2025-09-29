@@ -1,20 +1,30 @@
 package org.acme.vehiclerouting.domain;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
+import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
+import ai.timefold.solver.core.api.domain.variable.PreviousElementShadowVariable;
+import ai.timefold.solver.core.api.domain.variable.ShadowSources;
+import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
+@JsonIdentityInfo(scope = Visit.class, generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 @PlanningEntity
 public class Visit {
     private String id;
     private String name;
     private Location location;
     private int demand;
+    private Duration serviceDuration;
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime minStartTime;
@@ -22,17 +32,17 @@ public class Visit {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") 
     private LocalDateTime maxEndTime;
     
-    private long serviceDuration;
-    
-    // Main planning variables
-    @PlanningVariable(valueRangeProviderRefs = "vehicleRange")
+
+    @JsonIdentityReference(alwaysAsId = true)
+    @InverseRelationShadowVariable(sourceVariableName = "visits")
     private Vehicle vehicle;
     
-    @PlanningVariable(valueRangeProviderRefs = "visitRange", nullable = true)
-    @JsonIgnore
+    @JsonIdentityReference(alwaysAsId = true)
+    @PreviousElementShadowVariable(sourceVariableName = "visits")
     private Visit previousVisit;
     
     // Shadow variables (auto-calculated)
+    @ShadowVariable(supplierName = "arrivalTimeSupplier")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime arrivalTime;
     
@@ -41,8 +51,6 @@ public class Visit {
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime startServiceTime;
-    
-    private long drivingTimeSecondsFromPreviousStandstill;
     
     // CRITICAL: Must have ALL getters and setters
     public Vehicle getVehicle() { return vehicle; }
@@ -76,7 +84,7 @@ public class Visit {
         this.demand = demand;
         this.minStartTime = minStartTime;
         this.maxEndTime = maxEndTime;
-        this.serviceDuration = Duration.ofMinutes(30).getSeconds(); // default 30 minutes
+        this.serviceDuration = Duration.ofMinutes(30); // default 30 minutes
     }
 
     public Visit(String id, String name, Location location, int demand,
@@ -88,7 +96,7 @@ public class Visit {
         this.minStartTime = minStartTime;
         this.maxEndTime = maxEndTime;
         // Convert Duration to seconds
-        this.serviceDuration = serviceDuration != null ? serviceDuration.getSeconds() : Duration.ofMinutes(30).getSeconds();
+        this.serviceDuration = serviceDuration != null ? serviceDuration : Duration.ofMinutes(30);
     }
 
     // SAFE getters that don't do calculations
@@ -114,8 +122,8 @@ public class Visit {
         this.maxEndTime = maxEndTime; 
     }
 
-    public long getServiceDuration() { return serviceDuration; }
-    public void setServiceDuration(long serviceDuration) { 
+    public Duration getServiceDuration() { return serviceDuration; }
+    public void setServiceDuration(Duration serviceDuration) { 
         this.serviceDuration = serviceDuration; 
     }
 
@@ -127,23 +135,12 @@ public class Visit {
     /**
      * FIXED: Safe departure time getter - no calculations, just return stored value
      */
-    public LocalDateTime getDepartureTime() { 
-        return departureTime;  // Don't calculate, just return stored value
-    }
     public void setDepartureTime(LocalDateTime departureTime) { 
         this.departureTime = departureTime; 
     }
 
-    public LocalDateTime getStartServiceTime() { return startServiceTime; }
     public void setStartServiceTime(LocalDateTime startServiceTime) { 
         this.startServiceTime = startServiceTime; 
-    }
-
-    public long getDrivingTimeSecondsFromPreviousStandstill() { 
-        return drivingTimeSecondsFromPreviousStandstill; 
-    }
-    public void setDrivingTimeSecondsFromPreviousStandstill(long drivingTime) { 
-        this.drivingTimeSecondsFromPreviousStandstill = drivingTime; 
     }
 
     /**
@@ -151,8 +148,8 @@ public class Visit {
      */
     @JsonIgnore
     public LocalDateTime calculateDepartureTime() {
-        if (arrivalTime != null && serviceDuration > 0) {
-            return arrivalTime.plusSeconds(serviceDuration);
+        if (arrivalTime != null && serviceDuration.getSeconds() > 0) {
+            return arrivalTime.plus(serviceDuration);
         }
         return departureTime; // fallback to stored value
     }
@@ -161,18 +158,84 @@ public class Visit {
      * Helper method to set departure time based on arrival + service duration
      */
     public void updateDepartureTime() {
-        if (arrivalTime != null && serviceDuration > 0) {
-            this.departureTime = arrivalTime.plusSeconds(serviceDuration);
+        if (arrivalTime != null && serviceDuration.getSeconds() > 0) {
+            this.departureTime = arrivalTime.plus(serviceDuration);
         }
+    }
+
+   @SuppressWarnings("unused")
+    @ShadowSources({"vehicle", "previousVisit.arrivalTime"})
+    private LocalDateTime arrivalTimeSupplier() {
+        if (previousVisit == null && vehicle == null) {
+            return null;
+        }
+        LocalDateTime departureTime = previousVisit == null ? vehicle.getDepartureTime() : previousVisit.getDepartureTime();
+        return departureTime != null ? departureTime.plusSeconds(getDrivingTimeSecondsFromPreviousStandstill()) : null;
+    }
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public LocalDateTime getDepartureTime() {
+        if (arrivalTime == null) {
+            return null;
+        }
+        return getStartServiceTime().plus(serviceDuration);
+    }
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public LocalDateTime getStartServiceTime() {
+        if (arrivalTime == null) {
+            return null;
+        }
+        return arrivalTime.isBefore(minStartTime) ? minStartTime : arrivalTime;
+    }
+
+    @JsonIgnore
+    public boolean isServiceFinishedAfterMaxEndTime() {
+        return arrivalTime != null
+                && arrivalTime.plus(serviceDuration).isAfter(maxEndTime);
+    }
+
+    @JsonIgnore
+    public long getServiceFinishedDelayInMinutes() {
+        if (arrivalTime == null) {
+            return 0;
+        }
+        return roundDurationToNextOrEqualMinutes(Duration.between(maxEndTime, arrivalTime.plus(serviceDuration)));
+    }
+
+    private static long roundDurationToNextOrEqualMinutes(Duration duration) {
+        var remainder = duration.minus(duration.truncatedTo(ChronoUnit.MINUTES));
+        var minutes = duration.toMinutes();
+        if (remainder.equals(Duration.ZERO)) {
+            return minutes;
+        }
+        return minutes + 1;
+    }
+
+    @JsonIgnore
+    public long getDrivingTimeSecondsFromPreviousStandstill() {
+        if (vehicle == null) {
+            throw new IllegalStateException(
+                    "This method must not be called when the shadow variables are not initialized yet.");
+        }
+        if (previousVisit == null) {
+            return vehicle.getHomeLocation().getDrivingTimeTo(location);
+        }
+        return previousVisit.getLocation().getDrivingTimeTo(location);
+    }
+
+    // Required by the web UI even before the solution has been initialized.
+    @JsonProperty(value = "drivingTimeSecondsFromPreviousStandstill", access = JsonProperty.Access.READ_ONLY)
+    public Long getDrivingTimeSecondsFromPreviousStandstillOrNull() {
+        if (vehicle == null) {
+            return null;
+        }
+        return getDrivingTimeSecondsFromPreviousStandstill();
     }
 
     @Override
     public String toString() {
-        return "Visit{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", location=" + location +
-                ", demand=" + demand +
-                '}';
+        return id;
     }
+
 }

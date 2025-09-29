@@ -1,19 +1,24 @@
 
 package org.acme.vehiclerouting.domain;
 
-import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+
+import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
+import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
 
-
-public class Vehicle {
+@JsonIdentityInfo(scope = Vehicle.class, generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+@PlanningEntity
+public class Vehicle implements LocationAware {
 
     private String id;
     private String style;
@@ -23,6 +28,8 @@ public class Vehicle {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime departureTime;
     
+    @JsonIdentityReference(alwaysAsId = true)
+    @PlanningListVariable
     private List<Visit> visits;
     
     // Constructor ensuring departureTime is set
@@ -31,14 +38,11 @@ public class Vehicle {
         this.style = style;
         this.homeLocation = homeLocation;
         this.capacity = capacity;
-        this.departureTime = departureTime;  // ✅ CRITICAL: Actually set this!
+        this.departureTime = departureTime; 
         this.visits = new ArrayList<>();
     }
 
 
-    // Solver-calculated fields - stored directly, not calculated
-    private int totalDemand;
-    private long totalDrivingTimeSeconds;
     private LocalDateTime arrivalTime;
 
     // Default constructor (required by Timefold)
@@ -57,14 +61,42 @@ public class Vehicle {
         this.id = id;
         this.style = style;
         this.visits = new ArrayList<>();
-        this.capacity = 10; // default
+        switch (style) {
+            case "van":
+                this.capacity = 20;
+                break;
+            case "motorcycle":
+                this.capacity = 8;
+                break;
+            case "scooter":
+                this.capacity = 4;
+                break;          
+            default:
+                this.capacity = 10;
+                break;
+        }
     }
 
     public Vehicle(String id, String style, Location homeLocation, LocalDateTime departureTime) {
         this.id = id;
         this.homeLocation = homeLocation;
+        this.style = style;
+        this.departureTime = departureTime;
         this.visits = new ArrayList<>();
-        this.capacity = 10; // default
+        switch (style) {
+            case "van":
+                this.capacity = 20;
+                break;
+            case "motorcycle":
+                this.capacity = 8;
+                break;
+            case "scooter":
+                this.capacity = 4;
+                break;          
+            default:
+                this.capacity = 10;
+                break;
+        }
     }
 
     // Constructor with basic fields
@@ -73,7 +105,20 @@ public class Vehicle {
         this.style = style;
         this.homeLocation = homeLocation;
         this.visits = new ArrayList<>();
-        this.capacity = 10; // default
+        switch (style) {
+            case "van":
+                this.capacity = 20;
+                break;
+            case "motorcycle":
+                this.capacity = 8;
+                break;
+            case "scooter":
+                this.capacity = 4;
+                break;          
+            default:
+                this.capacity = 10;
+                break;
+        }
     }
 
     // SAFE getters and setters
@@ -100,12 +145,31 @@ public class Vehicle {
     public void setVisits(List<Visit> visits) { this.visits = visits; }
 
     // SAFE: Return stored values, don't calculate during JSON serialization
-    public int getTotalDemand() { return totalDemand; }
-    public void setTotalDemand(int totalDemand) { this.totalDemand = totalDemand; }
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public int getTotalDemand() {
+        int totalDemand = 0;
+        for (Visit visit : visits) {
+            totalDemand += visit.getDemand();
+        }
+        return totalDemand;
+    }
 
-    public long getTotalDrivingTimeSeconds() { return totalDrivingTimeSeconds; }
-    public void setTotalDrivingTimeSeconds(long totalDrivingTimeSeconds) { 
-        this.totalDrivingTimeSeconds = totalDrivingTimeSeconds; 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public long getTotalDrivingTimeSeconds() {
+        if (visits.isEmpty()) {
+            return 0;
+        }
+
+        long totalDrivingTime = 0;
+        Location previousLocation = homeLocation;
+
+        for (Visit visit : visits) {
+            totalDrivingTime += previousLocation.getDrivingTimeTo(visit.getLocation());
+            previousLocation = visit.getLocation();
+        }
+        totalDrivingTime += previousLocation.getDrivingTimeTo(homeLocation);
+
+        return totalDrivingTime;
     }
 
     public LocalDateTime getArrivalTime() { return arrivalTime; }
@@ -135,14 +199,6 @@ public class Vehicle {
         return 0;
     }
 
-    /**
-     * Update calculated fields safely
-     */
-    public void updateCalculatedFields() {
-        this.totalDemand = calculateTotalDemand();
-        this.totalDrivingTimeSeconds = calculateTotalDrivingTime();
-    }
-
     @Override
     public String toString() {
         return "Vehicle{" +
@@ -152,5 +208,11 @@ public class Vehicle {
                 ", capacity=" + capacity +
                 ", visits=" + (visits != null ? visits.size() : 0) +
                 '}';
+    }
+
+    @JsonIgnore
+    @Override
+    public Location getLocation() {
+        return homeLocation;
     }
 }

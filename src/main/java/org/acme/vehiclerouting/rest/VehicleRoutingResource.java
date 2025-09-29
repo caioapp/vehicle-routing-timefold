@@ -4,8 +4,22 @@ package org.acme.vehiclerouting.rest;
 import org.acme.vehiclerouting.domain.VehicleRoutePlan;
 import org.acme.vehiclerouting.domain.Vehicle;
 import org.acme.vehiclerouting.domain.Visit;
+import org.acme.vehiclerouting.rest.exception.ErrorInfo;
+import org.acme.vehiclerouting.rest.exception.VehicleRoutingSolverException;
 import org.acme.vehiclerouting.service.VehicleRoutingDataService;
 import org.acme.vehiclerouting.service.VehicleRoutingService;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+
+import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
+import ai.timefold.solver.core.api.score.buildin.hardsoftlong.HardSoftLongScore;
+import ai.timefold.solver.core.api.solver.ScoreAnalysisFetchPolicy;
+import ai.timefold.solver.core.api.solver.SolutionManager;
+import ai.timefold.solver.core.api.solver.SolverManager;
 import ai.timefold.solver.core.api.solver.SolverStatus;
 
 import jakarta.inject.Inject;
@@ -14,21 +28,45 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class VehicleRoutingResource {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(VehicleRoutingResource.class);
+
     @Inject
     VehicleRoutingDataService dataService;
 
     @Inject
     VehicleRoutingService solvingService;
+
+    private final SolverManager<VehicleRoutePlan, String> solverManager;
+    private final SolutionManager<VehicleRoutePlan, HardSoftLongScore> solutionManager;
+
+    private final ConcurrentMap<String, Job> jobIdToJob = new ConcurrentHashMap<>();
+
+    public VehicleRoutingResource(){
+        this.solverManager = null;
+        this.solutionManager = null;
+    }
+
+    @Inject
+    public VehicleRoutingResource(SolverManager<VehicleRoutePlan, String> solverManager,
+                                    SolutionManager<VehicleRoutePlan, HardSoftLongScore> solutionManager) {
+        this.solverManager = solverManager;
+        this.solutionManager = solutionManager;
+    }
 
     /**
      * GET vehicleRoute - Returns frontend-compatible data structure
@@ -85,13 +123,30 @@ public class VehicleRoutingResource {
     }
 
     /**
-     * POST solve - Returns frontend-compatible solved data
+     * POST route-plans - Returns frontend-compatible solved data
      */
     @POST
-    @Path("/solve")
-    public Response solve() {
-        try {
-            System.out.println("=== /solve endpoint called ===");
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("/route-plans")
+    public String solve() {
+        VehicleRoutePlan problem = solvingService.getProblem();
+        String jobId = UUID.randomUUID().toString();
+        jobIdToJob.put(jobId, Job.ofRoutePlan(problem));
+        solverManager.solveBuilder()
+                .withProblemId(jobId)
+                .withProblemFinder(jobId_ -> jobIdToJob.get(jobId).routePlan)
+                .withBestSolutionConsumer(solution -> jobIdToJob.put(jobId, Job.ofRoutePlan(solution)))
+                .withExceptionHandler((jobId_, exception) -> {
+                    jobIdToJob.put(jobId, Job.ofException(exception));
+                    LOGGER.error("Failed solving jobId ({}).", jobId, exception);
+                })
+                .run();
+        return jobId;
+    }
+
+    /*  try {
+            System.out.println("=== /route-plans endpoint called ===");
 
             VehicleRoutePlan problem = solvingService.getProblem();
             if (problem == null) {
@@ -114,7 +169,83 @@ public class VehicleRoutingResource {
             // return getHardcodedFrontendData();
             return null;
         }
+ */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/route-plans/{jobId}")
+    public VehicleRoutePlan getRoutePlan(
+            @Parameter(description = "The job ID returned by the POST method.") @PathParam("jobId") String jobId) {
+        VehicleRoutePlan routePlan = getRoutePlanAndCheckForExceptions(jobId);
+        SolverStatus solverStatus = solverManager.getSolverStatus(jobId);
+        String scoreExplanation = solutionManager.explain(routePlan).getSummary();
+        routePlan.setSolverStatus(solverStatus);
+        routePlan.setScoreExplanation(scoreExplanation);
+        return routePlan;
     }
+
+    @Operation(
+            summary = "Get the route plan status and score for a given job ID.")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "The route plan status and the best score so far.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = VehicleRoutePlan.class))),
+            @APIResponse(responseCode = "404", description = "No route plan found.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ErrorInfo.class))),
+            @APIResponse(responseCode = "500", description = "Exception during solving a route plan.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ErrorInfo.class)))
+    })
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/route-plans/{jobId}/status")
+    public VehicleRoutePlan getStatus(
+            @Parameter(description = "The job ID returned by the POST method.") @PathParam("jobId") String jobId) {
+        VehicleRoutePlan routePlan = getRoutePlanAndCheckForExceptions(jobId);
+        SolverStatus solverStatus = solverManager.getSolverStatus(jobId);
+        return new VehicleRoutePlan(routePlan.getName(), routePlan.getScore(), solverStatus);
+    }
+
+    private VehicleRoutePlan getRoutePlanAndCheckForExceptions(String jobId) {
+        Job job = jobIdToJob.get(jobId);
+        if (job == null) {
+            throw new VehicleRoutingSolverException(jobId, Response.Status.NOT_FOUND, "No route plan found.");
+        }
+        if (job.exception != null) {
+            throw new VehicleRoutingSolverException(jobId, job.exception);
+        }
+        return job.routePlan;
+    }
+
+    @Operation(
+            summary = "Terminate solving for a given job ID. Returns the best solution of the route plan so far, as it might still be running or not even started.")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "The best solution of the route plan so far.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = VehicleRoutePlan.class))),
+            @APIResponse(responseCode = "404", description = "No route plan found.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ErrorInfo.class))),
+            @APIResponse(responseCode = "500", description = "Exception during solving a route plan.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ErrorInfo.class)))
+    })
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/route-plans/{jobId}")
+    public VehicleRoutePlan terminateSolving(
+            @Parameter(description = "The job ID returned by the POST method.") @PathParam("jobId") String jobId) {
+        solverManager.terminateEarly(jobId);
+        return getRoutePlan(jobId);
+    }
+
+    @Operation(summary = "Submit a route plan to analyze its score.")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200",
+                    description = "Resulting score analysis, optionally without constraint matches.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ScoreAnalysis.class)))})
+   
 
     /**
      * Convert VehicleRoutePlan to frontend-compatible format
@@ -130,6 +261,8 @@ public class VehicleRoutingResource {
                 vehicleData.put("id", vehicle.getId());
                 vehicleData.put("style", vehicle.getStyle());
                 vehicleData.put("capacity", vehicle.getCapacity());
+                vehicleData.put("totalDemand", vehicle.getTotalDemand());
+                vehicleData.put("totalDrivingTimeSeconds", vehicle.getTotalDrivingTimeSeconds());
 
                 // Frontend expects "location" property with [lat, lon] array
                 double[] location = {
@@ -170,6 +303,7 @@ public class VehicleRoutingResource {
         data.put("score", plan.getScore() != null ? plan.getScore().toString() : "0hard/0soft");
         data.put("solverStatus", plan.getSolverStatus() != null ? plan.getSolverStatus().toString() : "NOT_SOLVING");
         data.put("name", plan.getName());
+        data.put("totalDrivingTimeSeconds", plan.getTotalDrivingTimeSeconds());
 
         // Add bounds
         if (plan.getSouthWestCorner() != null && plan.getNorthEastCorner() != null) {
@@ -281,12 +415,33 @@ public class VehicleRoutingResource {
     } */
 
     @GET
-    @Path("/health")
+    @Path("/route-plans//health")
     public Response health() {
         Map<String, Object> health = new HashMap<>();
         health.put("status", "UP");
         health.put("service", "Vehicle Routing (Frontend-Compatible)");
         health.put("timestamp", System.currentTimeMillis());
         return Response.ok(health).build();
+    }
+
+    @PUT
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/route-plans/analyze")
+    public ScoreAnalysis<HardSoftLongScore> analyze(VehicleRoutePlan problem,
+                                                    @QueryParam("fetchPolicy") ScoreAnalysisFetchPolicy fetchPolicy) {
+        return fetchPolicy == null ? solutionManager.analyze(problem) : solutionManager.analyze(problem, fetchPolicy);
+    }
+
+    private record Job(VehicleRoutePlan routePlan, Throwable exception) {
+
+        static Job ofRoutePlan(VehicleRoutePlan routePlan) {
+            return new Job(routePlan, null);
+        }
+
+        static Job ofException(Throwable exception) {
+            return new Job(null, exception);
+        }
+
     }
 }
